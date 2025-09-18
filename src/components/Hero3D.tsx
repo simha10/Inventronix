@@ -24,8 +24,8 @@ const AnimatedSphere = () => {
           speed={2}
           roughness={0.1}
           metalness={0.8}
-          emissive="#001a26"
-          emissiveIntensity={0.2}
+          emissive="#00D4FF"
+          emissiveIntensity={0.5}
         />
       </Sphere>
     </Float>
