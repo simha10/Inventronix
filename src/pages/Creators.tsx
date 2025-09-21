@@ -68,7 +68,7 @@ const Creators = () => {
               </span>
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              The visionary minds behind Inventronix, dedicated to empowering
+              The visionary minds behind InventroniX, dedicated to empowering
               the next generation of engineers
             </p>
           </motion.div>
