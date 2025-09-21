@@ -69,31 +69,20 @@ const Contact = () => {
                 </div>
                 
                 <form className="space-y-6">
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="firstName" className="text-foreground">First Name</Label>
+                  <div className="space-y-2">
+                      <Label htmlFor="firstName" className="text-foreground">Full Name</Label>
                       <Input 
                         id="firstName" 
-                        placeholder="John" 
+                        placeholder="Enter your full name" 
                         className="glass-subtle border-card-border focus:border-primary transition-all duration-300" 
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="lastName" className="text-foreground">Last Name</Label>
-                      <Input 
-                        id="lastName" 
-                        placeholder="Doe" 
-                        className="glass-subtle border-card-border focus:border-primary transition-all duration-300" 
-                      />
-                    </div>
-                  </div>
-                  
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-foreground">Email</Label>
                     <Input 
                       id="email" 
                       type="email" 
-                      placeholder="john@example.com" 
+                      placeholder="Enter your email" 
                       className="glass-subtle border-card-border focus:border-primary transition-all duration-300" 
                     />
                   </div>
@@ -103,7 +92,7 @@ const Contact = () => {
                     <Input 
                       id="phone" 
                       type="tel" 
-                      placeholder="+1 (555) 123-4567" 
+                      placeholder="Enter your phone number" 
                       className="glass-subtle border-card-border focus:border-primary transition-all duration-300" 
                     />
                   </div>
@@ -186,13 +175,13 @@ const Contact = () => {
 
               {/* Social Media Icons */}
               <div className="mt-12 flex justify-center space-x-8 text-primary">
-                <a href="https://www.linkedin.com/in/inventronix" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="hover:text-blue-600 transition-colors">
+                <a href="https://www.linkedin.com/company/inventronix4u/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="hover:text-blue-600 transition-colors">
                   <Linkedin className="h-8 w-8" />
                 </a>
                 <a href="mailto:inventronix4u@gmail.com" aria-label="Email" className="hover:text-red-600 transition-colors">
                   <Mail className="h-8 w-8" />
                 </a>
-                <a href="https://www.instagram.com/inventronix" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="hover:text-pink-600 transition-colors">
+                <a href="https://www.instagram.com/inventronix?igsh=MXo4ZGxlN2l2ZmVt" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="hover:text-pink-600 transition-colors">
                   <Instagram className="h-8 w-8" />
                 </a>
               </div>
@@ -214,13 +203,8 @@ const Contact = () => {
               Ready to Start Your Journey?
             </h2>
             <p className="text-xl text-muted-foreground mb-8">
-              Join thousands of students who have transformed their careers with Inventronix
+              Join thousands of students who have transformed their careers with InventroniX
             </p>
-            <Link to="/contact">
-              <Button variant="hero" size="lg">
-                Get Started Today
-              </Button>
-            </Link>
             <Button variant="glass" size="lg" className="ml-4">
               Download Brochure
             </Button>

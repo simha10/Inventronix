@@ -61,7 +61,7 @@ const Home = () => {
             >
               Welcome to{" "}
               <span className="text-glow bg-gradient-primary bg-clip-text text-transparent">
-                Inventronix
+                InventroniX
               </span>
             </motion.h1>
 
@@ -170,7 +170,7 @@ const Home = () => {
             </h2>
             <p className="text-xl text-muted-foreground mb-8">
               Join thousands of students who have accelerated their careers with
-              Inventronix mentorship
+              InventroniX mentorship
             </p>
             <Link to="/contact">
               <Button variant="hero" size="lg">

@@ -31,7 +31,7 @@ const About = () => {
     {
       year: "2024",
       title: "Foundation",
-      description: "Inventronix was founded with a vision to revolutionize technical education"
+      description: "InventroniX was founded with a vision to revolutionize technical education"
     },
     {
       year: "Aug 2025",
@@ -58,7 +58,7 @@ const About = () => {
             transition={{ duration: 0.8 }}
           >
             <h1 className="text-5xl md:text-6xl font-bold text-foreground text-3d mb-6">
-              About <span className="text-glow bg-gradient-primary bg-clip-text text-transparent">Inventronix</span>
+              About <span className="text-glow bg-gradient-primary bg-clip-text text-transparent">InventroniX</span>
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
               Pioneering the future of technical education through innovative mentorship and immersive learning experiences
@@ -125,7 +125,7 @@ const About = () => {
               Our <span className="text-glow text-primary">Values</span>
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              The core principles that guide everything we do at Inventronix
+              The core principles that guide everything we do at InventroniX
             </p>
           </motion.div>
 

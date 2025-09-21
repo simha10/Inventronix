@@ -14,15 +14,15 @@ import { Link } from 'react-router-dom';
 const FAQ = () => {
   const faqs = [
     {
-      question: "What services does Inventronix offer?",
-      answer: "Inventronix offers comprehensive technical mentorship including project development guidance, documentation services, PPT preparation, webinars, hands-on workshops, and personalized project mentorship. We cover the complete spectrum of technical education and career development."
+      question: "What services does inventroniX offer?",
+      answer: "inventroniX offers comprehensive technical mentorship including project development guidance, documentation services, PPT preparation, webinars, hands-on workshops, and personalized project mentorship. We cover the complete spectrum of technical education and career development."
     },
     {
-      question: "Who can benefit from Inventronix mentorship?",
+      question: "Who can benefit from inventroniX mentorship?",
       answer: "Our services are designed for engineering students, recent graduates, professionals looking to upskill, and anyone passionate about technology. Whether you're a beginner or looking to advance your career, our tailored approach ensures everyone finds value."
     },
     {
-      question: "How do I get started with Inventronix?",
+      question: "How do I get started with inventroniX?",
       answer: "Getting started is simple! Contact us through our website, email, or phone. We'll schedule a consultation to understand your goals and recommend the best services for your needs. From there, we'll create a personalized learning path."
     },
     {

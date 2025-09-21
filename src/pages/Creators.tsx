@@ -1,9 +1,9 @@
-import { motion } from 'framer-motion';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import FloatingParticles from '@/components/FloatingParticles';
-import { Mail, Phone, User, Award, Code, BookOpen } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { motion } from "framer-motion";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import FloatingParticles from "@/components/FloatingParticles";
+import { Mail, Phone, User, Award, Code, BookOpen } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Creators = () => {
   const creators = [
@@ -13,44 +13,46 @@ const Creators = () => {
       email: "inventronix4u@gmail.com",
       phone: "917675895113",
       avatar: "/api/placeholder/300/300",
+      connectedIn: "https://www.linkedin.com/in/sarakanam-veera-venkata-ramesh",
       bio: "Passionate technical mentor with extensive experience in guiding students through complex engineering challenges. Specializes in modern development practices and industry-relevant skills.",
       expertise: [
         "VLSI Development",
         "Technical Mentorship",
         "Project Architecture",
-        "Career Guidance"
+        "Career Guidance",
       ],
       achievements: [
         "500+ students mentored",
         "Industry expert in modern frameworks",
-        "Published research in technical journals"
-      ]
+        "Published research in technical journals",
+      ],
     },
     {
       name: "Nagasai Devavarapu",
       role: "Project Development Lead",
-      email: "inventronix4u@gmail.com", 
+      email: "inventronix4u@gmail.com",
       phone: "917675895113",
       avatar: "/api/placeholder/300/300",
+      connectedIn: "https://www.linkedin.com/in/nagasai-devavarapu",
       bio: "Expert project developer focused on delivering cutting-edge solutions and guiding teams through the complete development lifecycle. Passionate about innovation and technical excellence.",
       expertise: [
-        "Project Management",        
+        "Project Management",
         "Team Leadership",
         "Technology Integration",
-        "Quality Assurance"
+        "Quality Assurance",
       ],
       achievements: [
         "Expert in project methodologies",
         "Innovation award recipient",
-        "Led multiple successful project launches"
-      ]
-    }
+        "Led multiple successful project launches",
+      ],
+    },
   ];
 
   return (
     <div className="relative min-h-screen pt-16">
       <FloatingParticles />
-      
+
       {/* Hero Section */}
       <section className="py-24 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -60,10 +62,14 @@ const Creators = () => {
             transition={{ duration: 0.8 }}
           >
             <h1 className="text-5xl md:text-6xl font-bold text-foreground text-3d mb-6">
-              Meet Our <span className="text-glow bg-gradient-primary bg-clip-text text-transparent">Creators</span>
+              Meet Our{" "}
+              <span className="text-glow bg-gradient-primary bg-clip-text text-transparent">
+                Creators
+              </span>
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              The visionary minds behind Inventronix, dedicated to empowering the next generation of engineers
+              The visionary minds behind Inventronix, dedicated to empowering
+              the next generation of engineers
             </p>
           </motion.div>
         </div>
@@ -85,7 +91,7 @@ const Creators = () => {
                 <Card className="glass p-8 interactive-3d border-card-border hover:border-primary/50 transition-all duration-500 h-full">
                   <div className="flex flex-col items-center text-center mb-8">
                     {/* Avatar */}
-                    <motion.div 
+                    <motion.div
                       className="relative mb-6"
                       whileHover={{ scale: 1.05, rotateY: 5 }}
                       transition={{ duration: 0.3 }}
@@ -105,18 +111,24 @@ const Creators = () => {
                     <p className="text-lg text-primary font-semibold mb-4">
                       {creator.role}
                     </p>
-                    
+
                     {/* Contact Info */}
                     <div className="flex flex-col sm:flex-row gap-4 mb-6">
                       <div className="flex items-center space-x-2 text-muted-foreground hover:text-primary transition-colors">
                         <Mail className="h-4 w-4" />
-                        <a href={`mailto:${creator.email}`} className="text-sm hover:underline">
+                        <a
+                          href={`mailto:${creator.email}`}
+                          className="text-sm hover:underline"
+                        >
                           {creator.email}
                         </a>
                       </div>
                       <div className="flex items-center space-x-2 text-muted-foreground hover:text-primary transition-colors">
                         <Phone className="h-4 w-4" />
-                        <a href={`tel:${creator.phone}`} className="text-sm hover:underline">
+                        <a
+                          href={`tel:${creator.phone}`}
+                          className="text-sm hover:underline"
+                        >
                           {creator.phone}
                         </a>
                       </div>
@@ -140,7 +152,10 @@ const Creators = () => {
                           key={skillIndex}
                           initial={{ opacity: 0, x: -20 }}
                           whileInView={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.5, delay: skillIndex * 0.1 }}
+                          transition={{
+                            duration: 0.5,
+                            delay: skillIndex * 0.1,
+                          }}
                           className="flex items-center space-x-2"
                         >
                           <div className="w-2 h-2 bg-primary rounded-full" />
@@ -157,27 +172,41 @@ const Creators = () => {
                       Achievements
                     </h4>
                     <div className="grid grid-cols-1 gap-2">
-                      {creator.achievements.map((achievement, achievementIndex) => (
-                        <motion.div
-                          key={achievementIndex}
-                          initial={{ opacity: 0, x: -20 }}
-                          whileInView={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.5, delay: achievementIndex * 0.1 }}
-                          className="flex items-center space-x-2"
-                        >
-                          <div className="w-2 h-2 bg-accent rounded-full" />
-                          <span className="text-foreground">{achievement}</span>
-                        </motion.div>
-                      ))}
+                      {creator.achievements.map(
+                        (achievement, achievementIndex) => (
+                          <motion.div
+                            key={achievementIndex}
+                            initial={{ opacity: 0, x: -20 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            transition={{
+                              duration: 0.5,
+                              delay: achievementIndex * 0.1,
+                            }}
+                            className="flex items-center space-x-2"
+                          >
+                            <div className="w-2 h-2 bg-accent rounded-full" />
+                            <span className="text-foreground">
+                              {achievement}
+                            </span>
+                          </motion.div>
+                        )
+                      )}
                     </div>
                   </div>
 
-                  {/* Contact Button */}
-                  <Button 
-                    variant="outline" 
+                  {/* LinkedIn Connect Button */}
+                  <Button
+                    variant="outline"
                     className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300"
+                    onClick={() =>
+                      window.open(
+                        creator.connectedIn,
+                        "_blank",
+                        "noopener,noreferrer"
+                      )
+                    }
                   >
-                    Connect with {creator.name.split(' ')[0]}
+                    Connect with {creator.name.split(" ")[0]}
                   </Button>
                 </Card>
               </motion.div>
@@ -200,8 +229,9 @@ const Creators = () => {
               Our Shared Vision
             </h2>
             <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
-              Together, we're committed to creating an ecosystem where aspiring engineers can thrive, 
-              learn from real-world experiences, and build the technologies that will shape tomorrow.
+              Together, we're committed to creating an ecosystem where aspiring
+              engineers can thrive, learn from real-world experiences, and build
+              the technologies that will shape tomorrow.
             </p>
             <Link to="/contact">
               <Button variant="hero" size="lg">

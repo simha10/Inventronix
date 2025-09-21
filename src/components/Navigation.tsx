@@ -1,29 +1,34 @@
-import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { Menu, X, Zap } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Menu, X } from "lucide-react";
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
 
+  // Close menu when route changes
+  useEffect(() => {
+    setIsOpen(false);
+  }, [location]);
+
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 50);
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const navItems = [
-    { path: '/', label: 'Home' },
-    { path: '/services', label: 'Services' },
-    { path: '/creators', label: 'Creators' },
-    { path: '/about', label: 'About' },
-    { path: '/contact', label: 'Contact' },
-    { path: '/faq', label: 'FAQ' },
+    { path: "/", label: "Home" },
+    { path: "/services", label: "Services" },
+    { path: "/creators", label: "Creators" },
+    { path: "/about", label: "About" },
+    { path: "/contact", label: "Contact" },
+    { path: "/faq", label: "FAQ" },
   ];
 
   return (
@@ -31,7 +36,7 @@ const Navigation = () => {
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? 'glass shadow-3d' : 'bg-transparent'
+        scrolled ? "glass shadow-3d" : "bg-transparent"
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -39,11 +44,17 @@ const Navigation = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 group">
             <div className="relative">
-              <Zap className="h-8 w-8 text-primary group-hover:text-primary-glow transition-colors duration-300" />
+              <div className="h-8 w-8 text-primary group-hover:text-primary-glow transition-colors duration-300 rounded-full overflow-hidden">
+                <img
+                  src="/thunder.png"
+                  alt="Inventronix Logo"
+                  className="h-full w-full rounded-full object-cover object-center"
+                />
+              </div>
               <div className="absolute inset-0 h-8 w-8 text-primary animate-glow-pulse opacity-50" />
             </div>
             <span className="text-xl font-bold text-foreground group-hover:text-glow transition-all duration-300">
-              Inventronix
+              InventroniX
             </span>
           </Link>
 
@@ -55,8 +66,8 @@ const Navigation = () => {
                 to={item.path}
                 className={`relative px-3 py-2 text-sm font-medium transition-all duration-300 group ${
                   location.pathname === item.path
-                    ? 'text-primary'
-                    : 'text-foreground hover:text-primary-glow'
+                    ? "text-primary"
+                    : "text-foreground hover:text-primary-glow"
                 }`}
               >
                 {item.label}
@@ -85,13 +96,17 @@ const Navigation = () => {
             >
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
-                  key={isOpen ? 'close' : 'open'}
+                  key={isOpen ? "close" : "open"}
                   initial={{ rotate: -90, opacity: 0 }}
                   animate={{ rotate: 0, opacity: 1 }}
                   exit={{ rotate: 90, opacity: 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                  {isOpen ? (
+                    <X className="h-6 w-6" />
+                  ) : (
+                    <Menu className="h-6 w-6" />
+                  )}
                 </motion.div>
               </AnimatePresence>
             </Button>
@@ -104,10 +119,10 @@ const Navigation = () => {
         {isOpen && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
+            animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-            className="md:hidden glass border-t border-card-border"
+            transition={{ duration: 0.2 }}
+            className="md:hidden glass border-t border-card-border overflow-hidden will-change-[opacity,height]"
           >
             <div className="px-4 py-4 space-y-2">
               {navItems.map((item) => (
@@ -117,8 +132,8 @@ const Navigation = () => {
                   onClick={() => setIsOpen(false)}
                   className={`block px-3 py-2 text-base font-medium rounded-lg transition-all duration-300 ${
                     location.pathname === item.path
-                      ? 'text-primary bg-primary/10'
-                      : 'text-foreground hover:text-primary-glow hover:bg-accent/20'
+                      ? "text-primary bg-primary/10"
+                      : "text-foreground hover:text-primary-glow hover:bg-accent/20"
                   }`}
                 >
                   {item.label}
