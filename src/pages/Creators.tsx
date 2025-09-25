@@ -8,7 +8,7 @@ import { Link } from "react-router-dom";
 const Creators = () => {
   const creators = [
     {
-      name: "SV V RAMESH",
+      name: "RAMESH SV V",
       role: "Technical Instructor Mentor",
       email: "inventronix4u@gmail.com",
       phone: "917675895113",

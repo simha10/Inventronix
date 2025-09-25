@@ -8,6 +8,17 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    strictPort: true,
+  },
+  preview: {
+    port: 8080,
+    strictPort: true,
+  },
+  preview: {
+    port: 8080,
+    strictPort: true,
+    // Handle client-side routing in production preview
+    middlewareMode: "html",
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
