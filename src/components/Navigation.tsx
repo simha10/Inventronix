@@ -2,9 +2,21 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import {
+  Menu,
+  X,
+  Home,
+  Briefcase,
+  Users,
+  Info,
+  Mail,
+  HelpCircle,
+} from "lucide-react";
+import { useMobile } from "@/contexts/mobile-context";
+import { usePageNavigation } from "@/contexts/page-navigation-context";
 
 const Navigation = () => {
+  const { isMobile } = useMobile();
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
@@ -23,21 +35,21 @@ const Navigation = () => {
   }, []);
 
   const navItems = [
-    { path: "/", label: "Home" },
-    { path: "/services", label: "Services" },
-    { path: "/creators", label: "Creators" },
-    { path: "/about", label: "About" },
-    { path: "/contact", label: "Contact" },
-    { path: "/faq", label: "FAQ" },
+    { path: "/", label: "Home", icon: Home },
+    { path: "/services", label: "Services", icon: Briefcase },
+    { path: "/creators", label: "Creators", icon: Users },
+    { path: "/about", label: "About", icon: Info },
+    { path: "/contact", label: "Contact", icon: Mail },
+    { path: "/faq", label: "FAQ", icon: HelpCircle },
   ];
 
   return (
     <motion.nav
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 ${
         scrolled ? "glass shadow-3d" : "bg-transparent"
-      }`}
+      } ${isOpen ? "glass" : ""}`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
@@ -87,19 +99,19 @@ const Navigation = () => {
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden">
+          <div className="md:hidden z-[110]">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setIsOpen(!isOpen)}
-              className="text-foreground hover:text-primary"
+              className="relative z-[110] text-foreground hover:text-primary"
             >
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
                   key={isOpen ? "close" : "open"}
-                  initial={{ rotate: -90, opacity: 0 }}
-                  animate={{ rotate: 0, opacity: 1 }}
-                  exit={{ rotate: 90, opacity: 0 }}
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.8, opacity: 0 }}
                   transition={{ duration: 0.2 }}
                 >
                   {isOpen ? (
@@ -118,34 +130,106 @@ const Navigation = () => {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="md:hidden glass border-t border-card-border overflow-hidden will-change-[opacity,height]"
+            initial={{ opacity: 0, x: -300 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -300 }}
+            transition={{
+              type: "spring",
+              stiffness: 400,
+              damping: 40,
+              mass: 1,
+            }}
+            className="md:hidden fixed top-0 left-0 w-[280px] h-[100dvh] bg-background/95 border-r border-card-border overflow-hidden will-change-[opacity,transform] z-[105]"
+            style={{
+              backdropFilter: "blur(16px)",
+              boxShadow: "0 4px 30px rgba(0, 0, 0, 0.1)",
+            }}
           >
-            <div className="px-4 py-4 space-y-2">
-              {navItems.map((item) => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => setIsOpen(false)}
-                  className={`block px-3 py-2 text-base font-medium rounded-lg transition-all duration-300 ${
-                    location.pathname === item.path
-                      ? "text-primary bg-primary/10"
-                      : "text-foreground hover:text-primary-glow hover:bg-accent/20"
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              ))}
-              <div className="pt-2">
-                <Button variant="hero" size="sm" className="w-full">
+            <div className="h-16 flex items-center px-6 border-b border-card-border">
+              <Link
+                to="/"
+                className="flex items-center space-x-2"
+                onClick={() => setIsOpen(false)}
+              >
+                <div className="h-8 w-8">
+                  <img
+                    src="/thunder.png"
+                    alt="Logo"
+                    className="h-full w-full rounded-full"
+                  />
+                </div>
+                <span className="text-xl font-bold text-foreground">
+                  InventroniX
+                </span>
+              </Link>
+            </div>
+            <div className="px-4 py-6 space-y-2 overflow-y-auto max-h-[calc(100dvh-4rem)]">
+              {navItems.map((item, index) => {
+                const Icon = item.icon;
+                return (
+                  <motion.div
+                    key={item.path}
+                    initial={{ x: -20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{
+                      duration: 0.3,
+                      delay: index * 0.05,
+                      ease: "easeOut",
+                    }}
+                  >
+                    <Link
+                      to={item.path}
+                      onClick={() => setIsOpen(false)}
+                      className={`flex items-center px-4 py-3.5 text-base font-medium rounded-lg transition-all duration-300 active:scale-95 ${
+                        location.pathname === item.path
+                          ? "text-primary bg-primary/10 shadow-glow-sm"
+                          : "text-foreground hover:text-primary-glow hover:bg-accent/20"
+                      }`}
+                    >
+                      <Icon className="w-5 h-5 mr-3 flex-shrink-0" />
+                      <span>{item.label}</span>
+                      {location.pathname === item.path && (
+                        <motion.div
+                          layoutId="activeMenuItem"
+                          className="absolute left-0 w-1 h-8 bg-primary rounded-r-full"
+                          transition={{ duration: 0.3 }}
+                        />
+                      )}
+                    </Link>
+                  </motion.div>
+                );
+              })}
+              <motion.div
+                className="pt-4 px-4"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.3 }}
+              >
+                <Button variant="hero" size="lg" className="w-full group">
                   Get Started
+                  <motion.span
+                    className="ml-2 inline-block"
+                    initial={{ x: 0 }}
+                    whileHover={{ x: 5 }}
+                  >
+                    →
+                  </motion.span>
                 </Button>
-              </div>
+              </motion.div>
             </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[102] md:hidden"
+            onClick={() => setIsOpen(false)}
+          />
         )}
       </AnimatePresence>
     </motion.nav>

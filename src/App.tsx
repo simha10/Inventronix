@@ -4,6 +4,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { MobileProvider } from "./contexts/mobile-context";
+import { PageNavigationProvider } from "./contexts/page-navigation-context";
+import { PageContainer } from "./components/PageContainer";
+import { PageIndicator } from "./components/PageIndicator";
 import Home from "./pages/Home";
 import Services from "./pages/Services";
 import Creators from "./pages/Creators";
@@ -20,22 +23,25 @@ const App = () => (
     <MobileProvider>
       <TooltipProvider>
         <BrowserRouter>
-          <div className="min-h-screen bg-gradient-background relative">
-            <Navigation />
-            <div className="relative">
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/services" element={<Services />} />
-                <Route path="/creators" element={<Creators />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/faq" element={<FAQ />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+          <PageNavigationProvider>
+            <div className="min-h-screen bg-gradient-background relative">
+              <Navigation />
+              <PageIndicator />
+              <PageContainer>
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/services" element={<Services />} />
+                  <Route path="/creators" element={<Creators />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/faq" element={<FAQ />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </PageContainer>
+              <Toaster />
+              <Sonner />
             </div>
-            <Toaster />
-            <Sonner />
-          </div>
+          </PageNavigationProvider>
         </BrowserRouter>
       </TooltipProvider>
     </MobileProvider>
