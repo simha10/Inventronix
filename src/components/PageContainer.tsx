@@ -13,25 +13,37 @@ export const PageContainer = ({ children }: PageContainerProps) => {
     usePageNavigation();
   const touchStartY = useRef(0);
   const touchEndY = useRef(0);
-  const minSwipeDistance = 50;
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
+  const touchStartTime = useRef(0);
+  const minSwipeDistance = 80;
+  const minSwipeVelocity = 0.6; // pixels per ms
 
   useEffect(() => {
     if (!isMobile) return;
 
     const handleTouchStart = (e: TouchEvent) => {
       touchStartY.current = e.touches[0].clientY;
+      touchStartX.current = e.touches[0].clientX;
+      touchStartTime.current = Date.now();
     };
 
     const handleTouchMove = (e: TouchEvent) => {
       touchEndY.current = e.touches[0].clientY;
+      touchEndX.current = e.touches[0].clientX;
     };
 
     const handleTouchEnd = () => {
       if (isTransitioning) return;
 
-      const swipeDistance = touchStartY.current - touchEndY.current;
+      const deltaTime = Date.now() - touchStartTime.current;
+      const deltaY = Math.abs(touchStartY.current - touchEndY.current);
+      const deltaX = Math.abs(touchStartX.current - touchEndX.current);
+      const velocityY = deltaY / deltaTime;
 
-      if (Math.abs(swipeDistance) > minSwipeDistance) {
+      // Only trigger vertical swipe if vertical movement is dominant, distance met, and velocity indicates swipe not scroll
+      if (deltaY > deltaX && deltaY > minSwipeDistance && velocityY > minSwipeVelocity) {
+        const swipeDistance = touchStartY.current - touchEndY.current;
         if (swipeDistance > 0) {
           nextPage();
         } else {
@@ -59,7 +71,7 @@ export const PageContainer = ({ children }: PageContainerProps) => {
     <AnimatePresence mode="wait">
       <motion.div
         key={currentPage}
-        className="min-h-screen w-full overflow-hidden touch-none"
+        className="min-h-screen w-full overflow-y-auto"
         initial={{ opacity: 0, y: "100%" }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: "-100%" }}
