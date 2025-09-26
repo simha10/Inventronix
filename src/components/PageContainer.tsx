@@ -71,7 +71,7 @@ export const PageContainer = ({ children }: PageContainerProps) => {
     <AnimatePresence mode="wait">
       <motion.div
         key={currentPage}
-        className="min-h-screen w-full overflow-y-auto"
+        className="min-h-screen w-full pt-16 overflow-y-auto"
         initial={{ opacity: 0, y: "100%" }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: "-100%" }}
