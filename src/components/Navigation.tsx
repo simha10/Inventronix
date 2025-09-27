@@ -41,11 +41,11 @@ const Navigation = () => {
         scrolled ? "glass shadow-3d" : "bg-transparent"
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 group">
-            <div className="relative">
+          <Link to="/" className="flex items-center space-x-2 group flex-shrink-0">
+            <div className="relative flex-shrink-0">
               <div className="h-8 w-8 text-primary group-hover:text-primary-glow transition-colors duration-300 rounded-full overflow-hidden">
                 <img
                   src="/thunder.png"
@@ -55,7 +55,7 @@ const Navigation = () => {
               </div>
               <div className="absolute inset-0 h-8 w-8 text-primary animate-glow-pulse opacity-50" />
             </div>
-            <span className="text-xl font-bold text-foreground group-hover:text-glow transition-all duration-300">
+            <span className="text-xl font-bold text-foreground group-hover:text-glow transition-all duration-300 whitespace-nowrap">
               InventroniX
             </span>
           </Link>
