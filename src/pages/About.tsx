@@ -1,9 +1,12 @@
 import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import FloatingParticles from '@/components/FloatingParticles';
+import { useMobile } from '@/contexts/mobile-context';
 import { Target, Eye, Heart, Rocket, Users, Globe, Award, Lightbulb } from 'lucide-react';
 
 const About = () => {
+  const { isMobile } = useMobile();
+
   const values = [
     {
       icon: <Target className="h-8 w-8" />,
@@ -47,7 +50,7 @@ const About = () => {
 
   return (
     <div className="relative min-h-screen pt-16">
-      <FloatingParticles />
+      {!isMobile && <FloatingParticles />}
       
       {/* Hero Section */}
       <section className="py-24 relative">

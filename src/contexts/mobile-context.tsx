@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useCallback } from "react";
 
 interface MobileContextType {
   isMobile: boolean;
@@ -14,25 +14,32 @@ export const MobileProvider = ({ children }: { children: React.ReactNode }) => {
   const [isMobile, setIsMobile] = useState(false);
   const [isLandscape, setIsLandscape] = useState(false);
 
-  useEffect(() => {
-    const checkDevice = () => {
-      setIsMobile(window.innerWidth < 768);
-      setIsLandscape(window.innerWidth > window.innerHeight);
-    };
+  const checkDevice = useCallback(() => {
+    setIsMobile(window.innerWidth < 768);
+    setIsLandscape(window.innerWidth > window.innerHeight);
+  }, []);
 
+  useEffect(() => {
     // Check on mount
     checkDevice();
 
-    // Add event listeners
-    window.addEventListener("resize", checkDevice);
+    let timeoutId: NodeJS.Timeout;
+    const debouncedCheck = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(checkDevice, 100);
+    };
+
+    // Add event listeners with debounce
+    window.addEventListener("resize", debouncedCheck);
     window.addEventListener("orientationchange", checkDevice);
 
     // Cleanup
     return () => {
-      window.removeEventListener("resize", checkDevice);
+      window.removeEventListener("resize", debouncedCheck);
       window.removeEventListener("orientationchange", checkDevice);
+      clearTimeout(timeoutId);
     };
-  }, []);
+  }, [checkDevice]);
 
   return (
     <MobileContext.Provider value={{ isMobile, isLandscape }}>

@@ -3,11 +3,13 @@ import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
+import { useMobile } from "@/contexts/mobile-context";
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+  const { isMobile } = useMobile();
 
   // Close menu when route changes
   useEffect(() => {
@@ -92,7 +94,7 @@ const Navigation = () => {
               variant="ghost"
               size="icon"
               onClick={() => setIsOpen(!isOpen)}
-              className="text-foreground hover:text-primary"
+              className="text-foreground hover:text-primary min-h-[44px] min-w-[44px]"
             >
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
@@ -121,7 +123,7 @@ const Navigation = () => {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: isMobile ? 0.1 : 0.2 }}
             className="md:hidden glass border-t border-card-border overflow-hidden will-change-[opacity,height]"
           >
             <div className="px-4 py-4 space-y-2">
@@ -130,7 +132,7 @@ const Navigation = () => {
                   key={item.path}
                   to={item.path}
                   onClick={() => setIsOpen(false)}
-                  className={`block px-3 py-2 text-base font-medium rounded-lg transition-all duration-300 ${
+                  className={`block px-3 py-3 text-base font-medium rounded-lg transition-all duration-300 min-h-[44px] flex items-center ${
                     location.pathname === item.path
                       ? "text-primary bg-primary/10"
                       : "text-foreground hover:text-primary-glow hover:bg-accent/20"
@@ -140,7 +142,7 @@ const Navigation = () => {
                 </Link>
               ))}
               <div className="pt-2">
-                <Button variant="hero" size="sm" className="w-full">
+                <Button variant="hero" size="sm" className="w-full min-h-[44px]">
                   Get Started
                 </Button>
               </div>

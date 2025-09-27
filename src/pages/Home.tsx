@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import Hero3D from "@/components/Hero3D";
 import FloatingParticles from "@/components/FloatingParticles";
+import { useMobile } from "@/contexts/mobile-context";
 import {
   ArrowRight,
   Code,
@@ -15,6 +16,8 @@ import {
 import { Link } from "react-router-dom";
 
 const Home = () => {
+  const { isMobile } = useMobile();
+
   const services = [
     {
       icon: <Code className="h-8 w-8" />,
@@ -38,13 +41,15 @@ const Home = () => {
 
   return (
     <div className="relative">
-      <FloatingParticles />
+      {!isMobile && <FloatingParticles />}
 
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center pt-16 overflow-hidden">
-        <div className="absolute inset-0 opacity-30">
-          <Hero3D />
-        </div>
+        {!isMobile && (
+          <div className="absolute inset-0 opacity-30">
+            <Hero3D />
+          </div>
+        )}
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
