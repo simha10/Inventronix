@@ -161,10 +161,17 @@
   }
 
   .text-3d {
-    text-shadow: 
+    text-shadow:
       0 1px 0 hsla(195, 100%, 40%, 0.8),
       0 2px 0 hsla(195, 100%, 35%, 0.6),
       0 3px 0 hsla(195, 100%, 30%, 0.4),
       0 4px 8px hsla(195, 100%, 50%, 0.3);
+  }
+
+  /* Mobile Overflow Prevention */
+  @media (max-width: 768px) {
+    .page-section {
+      overflow-x: hidden;
+    }
   }
 }

@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import FloatingParticles from "@/components/FloatingParticles";
 import { Mail, Phone, User, Award, Code, BookOpen } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useMobile } from "@/contexts/mobile-context";
 
 const Creators = () => {
+  const { isMobile } = useMobile();
   const creators = [
     {
       name: "RAMESH SV V",
@@ -50,8 +52,8 @@ const Creators = () => {
   ];
 
   return (
-    <div className="relative min-h-screen pt-16">
-      <FloatingParticles />
+    <div className="relative min-h-screen pt-16 overflow-x-hidden">
+      {!isMobile && <FloatingParticles />}
 
       {/* Hero Section */}
       <section className="py-24 relative">

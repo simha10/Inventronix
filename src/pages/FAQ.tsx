@@ -10,8 +10,10 @@ import FloatingParticles from "@/components/FloatingParticles";
 import { HelpCircle, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { useMobile } from "@/contexts/mobile-context";
 
 const FAQ = () => {
+  const { isMobile } = useMobile();
   const faqs = [
     {
       question: "What services does inventroniX offer?",
@@ -71,8 +73,8 @@ const FAQ = () => {
   ];
 
   return (
-    <div className="relative min-h-screen pt-16">
-      <FloatingParticles />
+    <div className="relative min-h-screen pt-16 overflow-x-hidden">
+      {!isMobile && <FloatingParticles />}
 
       {/* Hero Section */}
       <section className="py-24 relative">

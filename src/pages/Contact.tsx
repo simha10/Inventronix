@@ -18,9 +18,11 @@ import {
   Instagram,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useMobile } from "@/contexts/mobile-context";
 
 const Contact = () => {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const { isMobile } = useMobile();
   const [submitStatus, setSubmitStatus] = React.useState<
     "idle" | "success" | "error"
   >("idle");
@@ -83,8 +85,8 @@ const Contact = () => {
   };
 
   return (
-    <div className="relative min-h-screen pt-16">
-      <FloatingParticles />
+    <div className="relative min-h-screen pt-16 overflow-x-hidden">
+      {!isMobile && <FloatingParticles />}
 
       {/* Hero Section */}
       <section className="py-24 relative">
@@ -330,9 +332,13 @@ const Contact = () => {
               Join thousands of students who have transformed their careers with
               InventroniX
             </p>
-            <Button variant="glass" size="lg" className="ml-4">
+            <a 
+              href="/INTX Broc.pdf" 
+              download="INTX_Brochure.pdf"
+              className="inline-flex items-center justify-center px-6 py-3 text-lg font-medium text-center text-white rounded-lg bg-primary/20 hover:bg-primary/30 border border-primary/30 transition-all duration-300 min-h-[44px] whitespace-nowrap"
+            >
               Download Brochure
-            </Button>
+            </a>
           </motion.div>
         </div>
       </section>

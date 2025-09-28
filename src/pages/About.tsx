@@ -49,7 +49,7 @@ const About = () => {
   ];
 
   return (
-    <div className="relative min-h-screen pt-16">
+    <div className="relative min-h-screen pt-16 overflow-x-hidden">
       {!isMobile && <FloatingParticles />}
       
       {/* Hero Section */}
@@ -187,7 +187,7 @@ const About = () => {
                   initial={{ opacity: 0, x: index % 2 === 0 ? -50 : 50 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.8, delay: index * 0.2 }}
-                  className={`flex items-center ${index % 2 === 0 ? 'flex-row' : 'flex-row-reverse'}`}
+                  className={`flex items-center ${index % 2 === 0 ? 'flex-col md:flex-row' : 'flex-col md:flex-row-reverse'}`}
                 >
                   <div className="flex-1 px-8">
                     <Card className="glass p-6 interactive-3d border-card-border hover:border-primary/50 transition-all duration-300">
