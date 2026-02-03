@@ -12,6 +12,7 @@ import Contact from "./pages/Contact";
 import FAQ from "./pages/FAQ";
 import NotFound from "./pages/NotFound";
 import Navigation from "./components/Navigation";
+import { SmoothScroll } from "./components/SmoothScroll";
 
 const queryClient = new QueryClient();
 
@@ -19,24 +20,26 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <MobileProvider>
       <TooltipProvider>
-        <BrowserRouter>
-          <div className="min-h-screen bg-gradient-background relative">
-            <Navigation />
-            <div className="relative">
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/services" element={<Services />} />
-                <Route path="/creators" element={<Creators />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/faq" element={<FAQ />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+        <SmoothScroll>
+          <BrowserRouter>
+            <div className="min-h-screen bg-gradient-background relative">
+              <Navigation />
+              <div className="relative">
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/services" element={<Services />} />
+                  <Route path="/creators" element={<Creators />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/faq" element={<FAQ />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </div>
+              <Toaster />
+              <Sonner />
             </div>
-            <Toaster />
-            <Sonner />
-          </div>
-        </BrowserRouter>
+          </BrowserRouter>
+        </SmoothScroll>
       </TooltipProvider>
     </MobileProvider>
   </QueryClientProvider>

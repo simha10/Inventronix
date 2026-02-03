@@ -1,12 +1,12 @@
-import { Canvas } from '@react-three/fiber';
-import { Points, PointMaterial } from '@react-three/drei';
-import { useRef, useMemo } from 'react';
-import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
+import { Canvas } from "@react-three/fiber";
+import { Points, PointMaterial } from "@react-three/drei";
+import { useRef, useMemo } from "react";
+import { useFrame } from "@react-three/fiber";
+import * as THREE from "three";
 
 const ParticleField = () => {
   const pointsRef = useRef<THREE.Points>(null);
-  
+
   const particleCount = 200;
   const positions = useMemo(() => {
     const positions = new Float32Array(particleCount * 3);
@@ -26,7 +26,12 @@ const ParticleField = () => {
   });
 
   return (
-    <Points ref={pointsRef} positions={positions} stride={3} frustumCulled={false}>
+    <Points
+      ref={pointsRef}
+      positions={positions}
+      stride={3}
+      frustumCulled={false}
+    >
       <PointMaterial
         transparent
         color="#00D4FF"
@@ -44,7 +49,7 @@ const FloatingParticles = () => {
     <div className="absolute inset-0 -z-10">
       <Canvas
         camera={{ position: [0, 0, 10], fov: 60 }}
-        style={{ background: 'transparent' }}
+        style={{ background: "transparent" }}
       >
         <ParticleField />
       </Canvas>

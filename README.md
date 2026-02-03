@@ -1,73 +1,64 @@
-# Welcome to your Lovable project
+# InventroniX - ECE Educational Platform
 
-## Project info
+Welcome to **InventroniX**, a high-level educational platform designed to transform ECE students into core engineers through practical exposure and industry-aligned mentorship.
 
-**URL**: https://lovable.dev/projects/388ef7f5-ae36-4f21-b775-61ebaf484e4e
+## Project Vision & System Organization
 
-## How can I edit this code?
+The system is built around the **student's journey** from novice to expert, visualized through growth metaphors and structured workflows.
 
-There are several ways of editing your application.
+### Core Concepts
 
-**Use Lovable**
+#### 1. The 5-Stage Project Engine (Success Route)
+Our proprietary development lifecycle that mimics Tier-1 R&D labs. This workflow is the backbone of the student's practical learning:
+- **Stage 01: System Spec**: Architectural definition and BOM analysis.
+- **Stage 02: Schematic Design**: Logic capture and Design Rule Checks (DRC).
+- **Stage 03: Fabrication**: Assembly, soldering, and manufacturing debugging.
+- **Stage 04: Firmware Rev**: Writing efficient C/C++ code (RTOS, memory optimization).
+- **Stage 05: QA & Deploy**: EMI/EMC testing and final product packaging.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/388ef7f5-ae36-4f21-b775-61ebaf484e4e) and start prompting.
+#### 2. Growth Metaphor (Visualized)
+The platform features a **"Seed to Tree"** visualization that evolves as users scroll through the success route.
+- **Seed**: The beginning of the journey (Student).
+- **Sprout -> Plant**: Gaining fundamental skills.
+- **Tree**: Becoming a fully fledged Core Engineer.
+- This is implemented using scroll-triggered animations (`framer-motion`).
 
-Changes made via Lovable will be committed automatically to this repo.
+#### 3. High-Performance UX
+- **Smooth Scrolling**: Integrated `lenis` for a premium, momentum-based scrolling experience.
+- **Interactive UI**: Glassmorphism, 3D elements, and particle effects to engage users.
 
-**Use your preferred IDE**
+## Technology Stack
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+This project is built with a modern, high-performance stack:
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- **Framework**: [React](https://react.dev/) + [Vite](https://vitejs.dev/)
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/)
+- **Animations**: [Framer Motion](https://www.framer.com/motion/)
+- **Smooth Scroll**: [Lenis](https://github.com/darkroomengineering/lenis)
+- **Icons**: [Lucide React](https://lucide.dev/)
 
-Follow these steps:
+## Project Structure
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+- `src/components/SuccessRoute.tsx`: Implements the 5-Stage Engine timeline.
+- `src/components/GrowthAnimation.tsx`: Handles the scroll-based seed-to-tree animation.
+- `src/components/SmoothScroll.tsx`: Wrapper for Lenis integration.
+- `src/pages/`: Contains main views (Home, Services, Contact, etc.).
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## Setup & Development
 
-# Step 3: Install the necessary dependencies.
-npm i
+1. **Clone the repository**
+   ```bash
+   git clone <YOUR_GIT_URL>
+   cd <YOUR_PROJECT_NAME>
+   ```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/388ef7f5-ae36-4f21-b775-61ebaf484e4e) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+3. **Start development server**
+   ```bash
+   npm run dev
+   ```

@@ -14,6 +14,7 @@ import {
   Video,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { SuccessRoute } from "@/components/SuccessRoute";
 
 const Home = () => {
   const { isMobile } = useMobile();
@@ -159,6 +160,10 @@ const Home = () => {
           </motion.div>
         </div>
       </section>
+
+
+      {/* Success Route / Project Engine */}
+      <SuccessRoute />
 
       {/* Call to Action */}
       <section className="py-24 relative">
