@@ -27,6 +27,12 @@ export default {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
           glow: "hsl(var(--primary-glow))",
+          50: '#f0f9ff',
+          100: '#e0f2fe',
+          500: '#0ea5e9',
+          600: '#0284c7',
+          700: '#0369a1',
+          900: '#0c4a6e',
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
@@ -44,6 +50,9 @@ export default {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
           glow: "hsl(var(--accent-glow))",
+          pink: '#ec4899',
+          purple: '#a855f7',
+          cyan: '#06b6d4',
         },
         popover: {
           DEFAULT: "hsl(var(--popover))",
@@ -98,7 +107,7 @@ export default {
         },
         "float": {
           "0%, 100%": { transform: "translateY(0px)" },
-          "50%": { transform: "translateY(-10px)" },
+          "50%": { transform: "translateY(-20px)" }, // Updated to match guide
         },
         "float-delayed": {
           "0%, 100%": { transform: "translateY(0px)" },
@@ -112,14 +121,24 @@ export default {
           "0%, 100%": { transform: "translateY(0px) translateZ(0px)" },
           "50%": { transform: "translateY(-20px) translateZ(10px)" },
         },
+        "fade-in": {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+        "slide-up": {
+          "0%": { transform: "translateY(20px)", opacity: "0" },
+          "100%": { transform: "translateY(0)", opacity: "1" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "float": "float 6s ease-in-out infinite",
+        "float": "float 3s ease-in-out infinite", // Updated duration to match guide
         "float-delayed": "float-delayed 8s ease-in-out infinite 2s",
         "glow-pulse": "glow-pulse 3s ease-in-out infinite",
         "parallax-float": "parallax-float 10s ease-in-out infinite",
+        "fade-in": "fade-in 0.5s ease-in",
+        "slide-up": "slide-up 0.5s ease-out",
       },
     },
   },

@@ -82,9 +82,6 @@ const Navigation = () => {
               )}
             </Link>
           ))}
-          <Button variant="hero" size="sm" className="ml-4">
-            Get Started
-          </Button>
         </div>
 
         {/* Mobile menu button */}
@@ -139,11 +136,6 @@ const Navigation = () => {
                   {item.label}
                 </Link>
               ))}
-              <div className="pt-2">
-                <Button variant="hero" size="sm" className="w-full min-h-[44px]">
-                  Get Started
-                </Button>
-              </div>
             </div>
           </motion.div>
         )}
