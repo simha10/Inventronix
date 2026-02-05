@@ -1,8 +1,6 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import Hero3D from "@/components/Hero3D";
-import FloatingParticles from "@/components/FloatingParticles";
 import { useMobile } from "@/contexts/mobile-context";
 import {
   ArrowRight,
@@ -16,7 +14,6 @@ import {
 import { Link } from "react-router-dom";
 import { SuccessRoute } from "@/components/SuccessRoute";
 import LearningTimeline from "@/components/LearningTimeline";
-import StatsCounter from "@/components/StatsCounter";
 
 
 const Home = () => {
@@ -66,8 +63,6 @@ const Home = () => {
 
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden z-10">
-        {/* Background 3D Element - Removed Hero3D */}
-
         {/* Hero Content */}
         <motion.div 
             style={{ opacity: heroOpacity }}
@@ -114,16 +109,6 @@ const Home = () => {
                 <ArrowRight className="w-5 h-5" />
               </motion.button>
             </Link>
-            
-            <Link to="/services">
-              <motion.button
-                whileHover={{ scale: 1.05, backgroundColor: "white", color: "#1a1a1a" }}
-                whileTap={{ scale: 0.95 }}
-                className="btn-secondary"
-              >
-                Explore Services
-              </motion.button>
-            </Link>
           </motion.div>
 
           {/* Feature Highlights */}
@@ -161,14 +146,12 @@ const Home = () => {
         </motion.div>
       </section>
 
-      {/* Stats Counter Section */}
-      <StatsCounter />
 
       {/* Learning Timeline Section */}
       <LearningTimeline />
 
       {/* Legacy Services Section - Adapted */}
-      <section className="py-24 relative">
+      <section className="py-24 relative" id="services">
          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-900/10 to-transparent pointer-events-none" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <motion.div

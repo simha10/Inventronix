@@ -74,100 +74,110 @@ const FAQ = () => {
 
   return (
     <div className="relative min-h-screen pt-16 overflow-x-hidden">
+      {/* Background Image - Fixed & Z-0 */}
+      <div 
+        className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-20"
+        style={{ backgroundImage: "url('/assets/faq-new-bg.jpg')" }}
+      >
+         <div className="absolute inset-0 bg-background/30 backdrop-blur-[2px]" />
+      </div>
+
       {!isMobile && <FloatingParticles />}
 
-      {/* Hero Section */}
-      <section className="py-24 relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-          >
-            <h1 className="text-5xl md:text-6xl font-bold text-foreground text-3d mb-6">
-              Frequently Asked{" "}
-              <span className="text-glow bg-gradient-primary bg-clip-text text-transparent">
-                Questions
-              </span>
-            </h1>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Find answers to common questions about our services, programs, and
-              how we can help accelerate your technical journey
-            </p>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* FAQ Section */}
-      <section className="py-12 relative">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-          >
-            <Card className="glass p-8 border-card-border">
-              <div className="flex items-center mb-8">
-                <HelpCircle className="h-8 w-8 text-primary mr-3" />
-                <h2 className="text-3xl font-bold text-foreground">
-                  Common Questions
-                </h2>
-              </div>
-
-              <Accordion type="single" collapsible className="space-y-4">
-                {faqs.map((faq, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: index * 0.05 }}
-                  >
-                    <AccordionItem
-                      value={`item-${index}`}
-                      className="glass-subtle rounded-lg px-6 border-card-border hover:border-primary/30 transition-all duration-300"
-                    >
-                      <AccordionTrigger className="text-foreground hover:text-primary transition-colors text-left py-6">
-                        {faq.question}
-                      </AccordionTrigger>
-                      <AccordionContent className="text-muted-foreground leading-relaxed pb-6">
-                        {faq.answer}
-                      </AccordionContent>
-                    </AccordionItem>
-                  </motion.div>
-                ))}
-              </Accordion>
-            </Card>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Still Have Questions */}
-      <section className="py-24 relative">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="glass p-12 rounded-2xl"
-          >
-            <MessageCircle className="h-16 w-16 text-primary mx-auto mb-6 animate-float" />
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
-              Still Have Questions?
-            </h2>
-            <p className="text-xl text-muted-foreground mb-8">
-              Can't find what you're looking for? Our team is here to help you
-              with personalized answers
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/contact">
-                <Button variant="glass" size="lg">
-                  Contact Us
-                </Button>
-              </Link>
+      {/* Main Content - Relative & Z-10 */}
+      <div className="relative z-10">
+        {/* Hero Section */}
+        <section className="pt-24 pb-2">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <motion.div
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8 }}
+            >
+                <h1 className="text-4xl md:text-5xl font-bold text-foreground text-3d mb-2">
+                Frequently Asked{" "}
+                <span className="text-glow bg-gradient-primary bg-clip-text text-transparent">
+                    Questions
+                </span>
+                </h1>
+                <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+                Find answers to common questions about our services.
+                </p>
+            </motion.div>
             </div>
-          </motion.div>
-        </div>
-      </section>
+        </section>
+
+        {/* FAQ Section */}
+        <section className="py-2">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                <motion.div
+                    initial={{ opacity: 0, y: 50 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8 }}
+                >
+                    {/* Made card transparent as requested */}
+                    <Card className="bg-transparent border-none shadow-none p-0">
+                    <div className="flex items-center mb-4 px-2">
+                        <HelpCircle className="h-6 w-6 text-primary mr-3" />
+                        <h2 className="text-2xl font-bold text-foreground">
+                        Common Questions
+                        </h2>
+                    </div>
+
+                    <Accordion type="single" collapsible className="space-y-2">
+                        {faqs.map((faq, index) => (
+                        <motion.div
+                            key={index}
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5, delay: index * 0.05 }}
+                        >
+                            <AccordionItem
+                            value={`item-${index}`}
+                            className="glass-subtle/40 rounded-lg px-4 border-card-border/30 hover:border-primary/30 transition-all duration-300 backdrop-blur-sm"
+                            >
+                            <AccordionTrigger className="text-foreground text-sm hover:text-primary transition-colors text-left py-3 font-semibold">
+                                {faq.question}
+                            </AccordionTrigger>
+                            <AccordionContent className="text-muted-foreground text-xs leading-relaxed pb-3">
+                                {faq.answer}
+                            </AccordionContent>
+                            </AccordionItem>
+                        </motion.div>
+                        ))}
+                    </Accordion>
+                    </Card>
+                </motion.div>
+            </div>
+        </section>
+
+        {/* Still Have Questions - Compacted */}
+        <section className="py-8">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <motion.div
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8 }}
+                className="glass-subtle/30 p-6 rounded-2xl mx-auto max-w-2xl backdrop-blur-sm"
+            >
+                <div className="flex items-center justify-center gap-4 mb-2">
+                    <MessageCircle className="h-8 w-8 text-primary animate-float" />
+                    <h2 className="text-xl font-bold text-foreground">
+                    Still Have Questions?
+                    </h2>
+                </div>
+                <p className="text-sm text-muted-foreground mb-4">
+                Our team is here to help you with personalized answers.
+                </p>
+                <Link to="/contact">
+                    <Button variant="glass" size="sm" className="h-8 text-xs">
+                    Contact Us
+                    </Button>
+                </Link>
+            </motion.div>
+            </div>
+        </section>
+      </div>
     </div>
   );
 };
