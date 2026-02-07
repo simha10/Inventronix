@@ -8,6 +8,9 @@ import Home from "./pages/Home";
 import Creators from "./pages/Creators";
 import Contact from "./pages/Contact";
 import FAQ from "./pages/FAQ";
+import Quiz from "./pages/Quiz";
+import QuizAdmin from "./pages/QuizAdmin";
+import QuizRoom from "./pages/QuizRoom";
 import NotFound from "./pages/NotFound";
 import Navigation from "./components/Navigation";
 import { SmoothScroll } from "./components/SmoothScroll";
@@ -28,6 +31,9 @@ const App = () => (
                   <Route path="/creators" element={<Creators />} />
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/faq" element={<FAQ />} />
+                  <Route path="/quiz" element={<Quiz />} />
+                  <Route path="/quiz/admin" element={<QuizAdmin />} />
+                  <Route path="/quiz/room/:roomId" element={<QuizRoom />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </div>
