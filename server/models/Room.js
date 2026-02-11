@@ -11,14 +11,20 @@ const participantSchema = new mongoose.Schema({
 });
 
 const roomSchema = new mongoose.Schema({
-    code: { type: String, required: true, unique: true, uppercase: true },
+    code: { type: String, required: true, unique: true },
     quizId: { type: mongoose.Schema.Types.ObjectId, ref: 'Quiz', required: true },
-    quizSnapshot: { type: Object, required: true }, // Store copy of quiz to avoid mutations affecting live games
-    isActive: { type: Boolean, default: true },
-    cancelledAt: Date,
-    expiresAt: { type: Date, required: true },
+    quizSnapshot: { type: Object, required: true }, // Store copy of quiz at time of room creation
+    status: {
+        type: String,
+        enum: ['waiting', 'active', 'completed'],
+        default: 'waiting'
+    },
+    duration: { type: Number, required: true }, // Duration in minutes
+    startedAt: { type: Date },
+    expiresAt: { type: Date }, // Will be set when status becomes active
+    cancelledAt: { type: Date },
     participants: [participantSchema],
-    createdAt: { type: Date, default: Date.now },
+    createdAt: { type: Date, default: Date.now } // TTL index could be added here
 });
 
 export const Room = mongoose.model('Room', roomSchema);

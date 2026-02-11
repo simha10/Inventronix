@@ -29,6 +29,8 @@ export const quizApi = {
     getRecentRooms: () => api.get('/room/recent'),
     getRoomStatus: (code: string) => api.get(`/room/${code}/status`),
     cancelRoom: (code: string) => api.post(`/room/${code}/cancel`),
+    startRoom: (code: string) => api.post(`/room/${code}/start`),
+    deleteRoom: (code: string) => api.delete(`/room/${code}`),
 
     // Student / Public
     getRoomInfo: (code: string) => api.get(`/room/${code}/info`),

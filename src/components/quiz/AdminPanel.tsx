@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   KeyRound, LogOut, ExternalLink, Copy, Check, RefreshCw,
   Users, Plus, ArrowLeft, Clock, Eye, Trophy, BookOpen,
-  Radio, History, ChevronRight, Zap, Shield, StopCircle,
+  Radio, History, ChevronRight, Zap, Shield, StopCircle, Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,16 @@ import { useLeaderboard } from '@/hooks/useQuizRoom';
 import { QuizCreator } from './QuizCreator';
 import { QuizTimer } from './QuizTimer';
 import { Leaderboard } from './Leaderboard';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const fadeIn = {
   initial: { opacity: 0, y: 12 },
@@ -49,6 +59,8 @@ export function AdminPanel() {
     enterRoom,
     exitRoom,
     cancelRoom,
+    startRoom,
+    deleteRoom,
     logout,
   } = useAdminQuiz();
 
@@ -56,6 +68,8 @@ export function AdminPanel() {
   const [copied, setCopied] = useState(false);
   const [roomStatus, setRoomStatus] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<AdminTab>('quizzes');
+  const [showStopConfirm, setShowStopConfirm] = useState(false);
+  const [resultToDelete, setResultToDelete] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [quizzes, setQuizzes] = useState<any[]>([]);
   const [ongoingRooms, setOngoingRooms] = useState<any[]>([]);
@@ -114,13 +128,23 @@ export function AdminPanel() {
     setRoomView('participants');
   };
 
+  const handleActivateQuiz = async () => {
+    if (!activeRoom) return;
+    await startRoom(activeRoom.code);
+    refreshStatus();
+  };
+
   const handleCancelRoom = async () => {
     if (!activeRoom) return;
-    if (confirm('Are you sure you want to stop this quiz? All participants will be notified and the room will be closed.')) {
-      await cancelRoom(activeRoom.code);
-      fetchOngoingRooms();
-      fetchRecentRooms();
-    }
+    setShowStopConfirm(true);
+  };
+
+  const confirmCancelRoom = async () => {
+    if (!activeRoom) return;
+    await cancelRoom(activeRoom.code);
+    fetchOngoingRooms();
+    fetchRecentRooms();
+    setShowStopConfirm(false);
   };
 
   const fetchQuizzes = useCallback(async () => {
@@ -130,6 +154,7 @@ export function AdminPanel() {
 
   const fetchOngoingRooms = useCallback(async () => {
     const rooms = await getActiveRooms();
+    // Filter out duplicates if needed, but API should handle unique codes
     setOngoingRooms(rooms);
   }, [getActiveRooms]);
 
@@ -151,6 +176,7 @@ export function AdminPanel() {
       const status = await getRoomStatus(activeRoom.code);
       if (status && status.success) {
         setRoomStatus(status);
+        // If status changed to active/completed, update list?
       }
     }
   }, [activeRoom, getRoomStatus]);
@@ -265,6 +291,7 @@ export function AdminPanel() {
     const participants = roomStatus?.room?.participants || [];
     const submitted = participants.filter((p: any) => p.submittedAt).length;
     const total = participants.length;
+    const isWaiting = roomStatus?.room?.status === 'waiting' || activeRoom.status === 'waiting';
 
     return (
       <motion.div {...fadeIn} className="max-w-4xl mx-auto p-4 md:p-6 space-y-6">
@@ -278,24 +305,56 @@ export function AdminPanel() {
             </Button>
             <div>
               <h1 className="text-xl font-bold flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
+                <div className={`w-2.5 h-2.5 rounded-full ${
+                  isWaiting ? 'bg-yellow-500' : 
+                  activeRoomExpired ? 'bg-gray-500' : 
+                  'bg-green-500 animate-pulse'
+                }`} />
                 Room: <span className="font-mono text-violet-600">{activeRoom.code}</span>
+                {activeRoomExpired && <span className="text-sm font-normal text-muted-foreground ml-2">(Done)</span>}
               </h1>
               <p className="text-xs text-muted-foreground">{activeRoom.quizTitle || ''}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCancelRoom}
-              disabled={loading}
-              className="text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive transition-colors"
-            >
-              <StopCircle className="w-4 h-4 mr-1.5" />
-              Stop Quiz
-            </Button>
-            <QuizTimer expiresAt={activeRoom.expiresAt} />
+            {isWaiting ? (
+              <Button
+                size="sm"
+                onClick={handleActivateQuiz}
+                disabled={loading}
+                className="bg-green-600 hover:bg-green-700 text-white shadow-md shadow-green-500/20"
+              >
+                <Zap className="w-4 h-4 mr-1.5" />
+                Start Quiz Now
+              </Button>
+            ) : activeRoomExpired ? (
+              <Button
+                size="sm"
+                onClick={() => { exitRoom(); setRoomView('participants'); }}
+                className="bg-primary hover:bg-primary/90 text-white"
+              >
+                <RefreshCw className="w-4 h-4 mr-1.5" />
+                Create Another Room
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCancelRoom}
+                disabled={loading}
+                className="text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive transition-colors"
+              >
+                <StopCircle className="w-4 h-4 mr-1.5" />
+                Stop Quiz
+              </Button>
+            )}
+            {!isWaiting && !activeRoomExpired && <QuizTimer expiresAt={roomStatus?.room?.expiresAt || activeRoom.expiresAt} />}
+            {isWaiting && (
+               <div className="px-3 py-1.5 rounded-md bg-yellow-500/10 text-yellow-600 text-sm font-medium flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5" />
+                  Waiting to Start
+               </div>
+            )}
           </div>
         </div>
 
@@ -566,6 +625,50 @@ export function AdminPanel() {
         ))}
       </motion.div>
 
+      {/* Stop Quiz Confirmation */}
+      <AlertDialog open={showStopConfirm} onOpenChange={setShowStopConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Stop Quiz?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to stop this quiz? All participants will be notified and the room will be closed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmCancelRoom} className="bg-destructive hover:bg-destructive/90">
+              Stop Quiz
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Result Confirmation */}
+      <AlertDialog open={!!resultToDelete} onOpenChange={(open) => !open && setResultToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Result?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this quiz result? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                if (resultToDelete) {
+                  deleteRoom(resultToDelete).then(() => fetchRecentRooms());
+                  setResultToDelete(null);
+                }
+              }} 
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Tab Content */}
       <AnimatePresence mode="wait">
         {/* ─── YOUR QUIZZES TAB ── */}
@@ -739,10 +842,22 @@ export function AdminPanel() {
                             Top: {room.topScore}/{room.totalQuestions}
                           </span>
                         </div>
-                        <div className="flex items-center text-sm text-violet-600 font-medium group-hover:translate-x-1 transition-transform">
-                          <Trophy className="w-4 h-4 mr-1.5" />
-                          View Leaderboard
-                          <ChevronRight className="w-4 h-4 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center text-sm text-violet-600 font-medium group-hover:translate-x-1 transition-transform">
+                              <Trophy className="w-4 h-4 mr-1.5" />
+                              View Leaderboard
+                            </div>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setResultToDelete(room.code);
+                                }}
+                            >
+                                <Trash2 className="w-4 h-4" />
+                            </Button>
                         </div>
                       </motion.div>
                     </motion.div>

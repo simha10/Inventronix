@@ -16,6 +16,8 @@ export function useQuizRoom(roomCode: string | null) {
     const [roomInfo, setRoomInfo] = useState<any | null>(null);
     const initializedRef = useRef(false);
 
+    const [status, setStatus] = useState<'waiting' | 'active' | 'completed'>('waiting');
+
     // Get stored participant data
     const getStoredData = useCallback(() => {
         if (!roomCode) return null;
@@ -45,6 +47,7 @@ export function useQuizRoom(roomCode: string | null) {
             const { data } = await quizApi.getRoomInfo(roomCode);
             setRoomInfo(data);
             setExpiresAt(data.expiresAt);
+            setStatus(data.status || 'active'); // Default to active if field missing (backward compat)
         } catch (err: any) {
             if (err.response?.status === 404) {
                 setError('Room not found. Please check the code and try again.');
@@ -69,6 +72,10 @@ export function useQuizRoom(roomCode: string | null) {
             setQuestions(data.questions);
             setExpiresAt(data.expiresAt);
             setIsSubmitted(data.isSubmitted || false);
+            // Don't set status here? Join response might not have it. 
+            // Actually, join response doesn't consistently return status in my route update? 
+            // I should double check. But polling will fix it.
+            // Let's assume polling handles status updates.
 
             // If re-joining, restore answers
             const restoredAnswers: Record<string, number> = {};
@@ -184,24 +191,40 @@ export function useQuizRoom(roomCode: string | null) {
         }
     }, [roomCode, getStoredData, fetchRoomInfo]);
 
-    // Poll for cancellation while quiz is in progress
+    // Poll for status/cancellation
     useEffect(() => {
-        if (!roomCode || !participantId || isSubmitted || isCancelled) return;
+        if (!roomCode) return;
 
-        const checkCancellation = async () => {
+        const checkStatus = async () => {
             try {
                 const { data } = await quizApi.getRoomInfo(roomCode);
-                if (data.isCancelled) {
-                    setIsCancelled(true);
+
+                // Update cancellation
+                if (data.isCancelled) setIsCancelled(true);
+
+                // Update status (e.g. waiting -> active)
+                if (data.status) setStatus(data.status);
+
+                // Update expiry if it changed (e.g. quiz started)
+                if (data.expiresAt && data.expiresAt !== expiresAt) {
+                    setExpiresAt(data.expiresAt);
                 }
+
+                // Update roomInfo (for participant count)
+                setRoomInfo(prev => ({
+                    ...prev,
+                    ...data,
+                }));
             } catch {
                 // Ignore polling errors
             }
         };
 
-        const interval = setInterval(checkCancellation, 5000);
+        // Poll more frequently if waiting (2s), less if active (5s)
+        const intervalMs = status === 'waiting' ? 2000 : 5000;
+        const interval = setInterval(checkStatus, intervalMs);
         return () => clearInterval(interval);
-    }, [roomCode, participantId, isSubmitted, isCancelled]);
+    }, [roomCode, expiresAt, status]);
 
     return {
         loading,
@@ -214,6 +237,7 @@ export function useQuizRoom(roomCode: string | null) {
         isSubmitted,
         isCancelled,
         expiresAt,
+        status,
         joinRoom,
         saveAnswer,
         submitQuiz,

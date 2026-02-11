@@ -1,4 +1,14 @@
 import { useState, useEffect } from 'react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Send, RefreshCw, XCircle, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -14,6 +24,7 @@ import { Leaderboard } from './Leaderboard';
 export function StudentQuiz() {
   const { roomId } = useParams<{ roomId: string }>();
   const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
 
   const {
     loading,
@@ -72,9 +83,12 @@ export function StudentQuiz() {
   };
 
   const handleSubmit = async () => {
-    if (confirm('Are you sure you want to submit? You cannot change your answers after submission.')) {
-      await submitQuiz();
-    }
+    setShowSubmitConfirm(true);
+  };
+
+  const handleConfirmSubmit = async () => {
+    await submitQuiz();
+    setShowSubmitConfirm(false);
   };
 
   // Loading state
@@ -142,13 +156,20 @@ export function StudentQuiz() {
                 roomName={leaderboardRoomName || roomInfo?.name}
                 currentParticipant={participantName || undefined}
               />
-              <div className="text-center mt-4">
-                <Button
+              <div className="text-center mt-6 space-y-3">
+                 <Button asChild size="lg" className="w-full max-w-sm bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-lg">
+                    <Link to="/">
+                       Quiz Completed - Go to Home
+                       <ArrowRight className="w-4 h-4 ml-2" />
+                    </Link>
+                 </Button>
+                 
+                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={refetchLeaderboard}
                   disabled={leaderboardLoading}
-                  className="text-muted-foreground hover:text-primary transition-colors"
+                  className="text-muted-foreground hover:text-primary transition-colors block mx-auto"
                 >
                   <RefreshCw className={`w-4 h-4 mr-2 ${leaderboardLoading ? 'animate-spin' : ''}`} />
                   Refresh Results
@@ -161,25 +182,56 @@ export function StudentQuiz() {
                   status="expired"
                   message="This quiz has ended. Loading results..."
                />
-               {leaderboardError && (
-                 <p className="text-sm text-muted-foreground">{leaderboardError}</p>
-               )}
-               <Button
-                 variant="outline"
-                 onClick={refetchLeaderboard}
-                 disabled={leaderboardLoading}
-               >
-                 <RefreshCw className={`w-4 h-4 mr-2 ${leaderboardLoading ? 'animate-spin' : ''}`} />
-                 {leaderboardLoading ? 'Loading...' : 'Load Leaderboard'}
+               <Button asChild size="lg" className="mt-4">
+                    <Link to="/">Go to Home</Link>
                </Button>
             </div>
           )}
         </AnimatePresence>
-        <div className="text-center mt-6">
-          <Button variant="outline" asChild>
-            <Link to="/quiz">Back to Quiz Home</Link>
-          </Button>
-        </div>
+      </div>
+    );
+  } 
+
+
+  // Waiting for host to start
+  if (roomInfo?.status === 'waiting' && participantId) {
+    return (
+      <div className="quiz-container p-4 flex items-center justify-center min-h-[60vh]">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center space-y-8 max-w-md w-full bg-card/50 backdrop-blur-sm p-8 rounded-2xl border shadow-xl"
+        >
+          <div className="relative w-24 h-24 mx-auto flex items-center justify-center">
+            <div className="absolute inset-0 bg-violet-500/20 rounded-full animate-ping" />
+            <div className="relative w-24 h-24 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-full flex items-center justify-center shadow-lg shadow-violet-500/30">
+              <RefreshCw className="w-10 h-10 text-white animate-spin duration-3000" />
+            </div>
+          </div>
+          
+          <div>
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent mb-3">
+              Waiting for Host
+            </h2>
+            <p className="text-muted-foreground">
+              Sit tight! The quiz will start soon.
+            </p>
+          </div>
+
+          <div className="bg-muted/50 rounded-xl p-4 border">
+            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-1">
+              Participants Joined
+            </p>
+            <p className="text-3xl font-bold text-foreground">
+              {roomInfo.participantCount || 1}
+            </p>
+          </div>
+
+          <div className="text-xs text-muted-foreground flex items-center justify-center gap-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            Connected as <span className="font-semibold text-foreground">{participantName}</span>
+          </div>
+        </motion.div>
       </div>
     );
   }
@@ -202,7 +254,8 @@ export function StudentQuiz() {
   if (isSubmitted) {
     return (
       <div className="quiz-container p-4">
-        <div className="mb-6 flex justify-center">
+        <div className="mb-6 flex flex-col items-center gap-2">
+          <span className="text-sm font-medium uppercase tracking-wider text-muted-foreground">Time Remaining</span>
           <QuizTimer expiresAt={expiresAt} />
         </div>
 
@@ -219,16 +272,19 @@ export function StudentQuiz() {
                 roomName={leaderboardRoomName || roomInfo?.name}
                 currentParticipant={participantName || undefined}
               />
-              <div className="text-center mt-4">
+              <div className="text-center mt-6 space-y-4">
+                <div className="p-4 bg-muted/50 rounded-lg border text-sm text-muted-foreground max-w-md mx-auto">
+                    Your rank can be modified till the last second of the quiz. Refresh for updates.
+                </div>
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
                   onClick={refetchLeaderboard}
                   disabled={leaderboardLoading}
-                  className="text-muted-foreground"
+                  className="gap-2"
                 >
-                  <RefreshCw className={`w-4 h-4 mr-2 ${leaderboardLoading ? 'animate-spin' : ''}`} />
-                  Refresh Results
+                  <RefreshCw className={`w-4 h-4 ${leaderboardLoading ? 'animate-spin' : ''}`} />
+                  Refresh Leaderboard
                 </Button>
               </div>
             </motion.div>
@@ -249,20 +305,25 @@ export function StudentQuiz() {
                  <CheckCircle className="w-10 h-10 text-green-500" />
                </motion.div>
                <h2 className="text-2xl font-bold mb-2">Quiz Submitted!</h2>
-               <p className="text-muted-foreground mb-8 max-w-sm mx-auto">
-                 Great job! Sit tight while other participants finish. The leaderboard will appear shortly.
+               <p className="text-muted-foreground mb-4 max-w-sm mx-auto">
+                 Great job! Sit tight while other participants finish.
+               </p>
+               <p className="text-sm text-yellow-600 bg-yellow-500/10 px-4 py-2 rounded-lg inline-block mb-8">
+                  Your rank can be modified till the last second of the quiz.
                </p>
                
-               <Button
-                 variant="outline"
-                 size="sm"
-                 onClick={refetchLeaderboard}
-                 disabled={leaderboardLoading}
-                 className="animate-pulse hover:animate-none"
-               >
-                 <RefreshCw className={`w-4 h-4 mr-2 ${leaderboardLoading ? 'animate-spin' : ''}`} />
-                 {leaderboardLoading ? 'Checking...' : 'Check Leaderboard'}
-               </Button>
+               <div>
+                 <Button
+                   variant="outline"
+                   size="sm"
+                   onClick={refetchLeaderboard}
+                   disabled={leaderboardLoading}
+                   className="gap-2"
+                 >
+                   <RefreshCw className={`w-4 h-4 ${leaderboardLoading ? 'animate-spin' : ''}`} />
+                   {leaderboardLoading ? 'Checking...' : 'Check Leaderboard'}
+                 </Button>
+               </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -368,6 +429,23 @@ export function StudentQuiz() {
           />
         </div>
       </div>
+
+      <AlertDialog open={showSubmitConfirm} onOpenChange={setShowSubmitConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Submit Quiz?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to submit? You cannot change your answers after submission.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmSubmit}>
+              Submit
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -23,7 +23,12 @@ The platform features a **"Seed to Tree"** visualization that evolves as users s
 - **Tree**: Becoming a fully fledged Core Engineer.
 - This is implemented using scroll-triggered animations (`framer-motion`).
 
-#### 3. High-Performance UX
+#### 3. Real-Time Quiz System
+- **Admin Panel**: Create quizzes, manage rooms, and monitor live progress. Includes "Stop Quiz" functionality.
+- **Student Experience**: Join with room codes, smooth question transitions, and real-time feedback.
+- **Robust State**: Handles disconnections, room cancellations, and auto-submission on timeout.
+
+#### 4. High-Performance UX
 - **Smooth Scrolling**: Integrated `lenis` for a premium, momentum-based scrolling experience.
 - **Interactive UI**: Glassmorphism, 3D elements, and particle effects to engage users.
 
