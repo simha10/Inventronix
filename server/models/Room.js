@@ -15,6 +15,7 @@ const roomSchema = new mongoose.Schema({
     quizId: { type: mongoose.Schema.Types.ObjectId, ref: 'Quiz', required: true },
     quizSnapshot: { type: Object, required: true }, // Store copy of quiz to avoid mutations affecting live games
     isActive: { type: Boolean, default: true },
+    cancelledAt: Date,
     expiresAt: { type: Date, required: true },
     participants: [participantSchema],
     createdAt: { type: Date, default: Date.now },

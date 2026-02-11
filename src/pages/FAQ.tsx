@@ -73,7 +73,7 @@ const FAQ = () => {
   ];
 
   return (
-    <div className="relative min-h-screen pt-16 overflow-x-hidden">
+    <div className="relative min-h-screen pt-16">
       {/* Background Image - Fixed & Z-0 */}
       <div 
         className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-20"

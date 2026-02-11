@@ -9,11 +9,11 @@ const api = axios.create({
     },
 });
 
-// Add interceptor to include admin secret if available
+// Add interceptor to include admin secret when authenticated
 api.interceptors.request.use((config) => {
-    const secret = sessionStorage.getItem('quiz_admin_session');
-    if (secret) {
-        config.headers['x-admin-secret'] = process.env.VITE_ADMIN_SECRET_KEY || 'admin123';
+    const adminSecret = sessionStorage.getItem('quiz_admin_secret');
+    if (adminSecret) {
+        config.headers['x-admin-secret'] = adminSecret;
     }
     return config;
 });
@@ -23,11 +23,19 @@ export const quizApi = {
     verifyAdmin: (secret: string) => api.post('/admin/verify', {}, { headers: { 'x-admin-secret': secret } }),
     createQuiz: (data: any) => api.post('/quiz/create', data),
     getQuizzes: () => api.get('/quiz'),
-    createRoom: (quizId: string) => api.post('/room/create', { quizId }),
+    createRoom: (quizId: string, durationMinutes?: number) =>
+        api.post('/room/create', { quizId, durationMinutes }),
+    getActiveRooms: () => api.get('/room/active'),
+    getRecentRooms: () => api.get('/room/recent'),
     getRoomStatus: (code: string) => api.get(`/room/${code}/status`),
+    cancelRoom: (code: string) => api.post(`/room/${code}/cancel`),
 
-    // Student
+    // Student / Public
+    getRoomInfo: (code: string) => api.get(`/room/${code}/info`),
     joinRoom: (code: string, name: string) => api.post('/room/join', { code, name }),
-    submitAnswer: (code: string, participantId: string, answers: any) => api.post(`/room/${code}/submit`, { participantId, answers }),
-    submitQuiz: (code: string, participantId: string) => api.post(`/room/${code}/submit`, { participantId, submit: true }),
+    submitAnswer: (code: string, participantId: string, answers: any) =>
+        api.post(`/room/${code}/submit`, { participantId, answers }),
+    submitQuiz: (code: string, participantId: string) =>
+        api.post(`/room/${code}/submit`, { participantId, submit: true }),
+    getLeaderboard: (code: string) => api.get(`/room/${code}/leaderboard`),
 };

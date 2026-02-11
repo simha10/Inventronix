@@ -9,10 +9,16 @@ router.post('/create', authenticateAdmin, async (req, res) => {
     try {
         const { title, description, questions } = req.body;
 
+        // Auto-generate question IDs if not provided
+        const processedQuestions = (questions || []).map((q, i) => ({
+            ...q,
+            id: q.id || `q${i}`,
+        }));
+
         const newQuiz = new Quiz({
             title,
             description,
-            questions
+            questions: processedQuestions
         });
 
         await newQuiz.save();

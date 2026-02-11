@@ -3,18 +3,18 @@ import { quizApi } from '@/services/api';
 
 export function useAdminQuiz() {
     const [isAuthenticated, setIsAuthenticated] = useState(() => {
-        return sessionStorage.getItem('quiz_admin_session') === 'true';
+        return !!sessionStorage.getItem('quiz_admin_secret');
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [createdRoom, setCreatedRoom] = useState<any>(null);
+    const [activeRoom, setActiveRoom] = useState<any>(null);
 
     const verifyAdmin = useCallback(async (secret: string) => {
         setLoading(true);
         setError(null);
         try {
             await quizApi.verifyAdmin(secret);
-            sessionStorage.setItem('quiz_admin_session', 'true');
+            sessionStorage.setItem('quiz_admin_secret', secret);
             setIsAuthenticated(true);
             return { success: true };
         } catch (err: any) {
@@ -25,11 +25,12 @@ export function useAdminQuiz() {
         }
     }, []);
 
-    const createRoom = useCallback(async (quizId: string) => {
+    const createRoom = useCallback(async (quizId: string, durationMinutes?: number) => {
         setLoading(true);
+        setError(null);
         try {
-            const { data } = await quizApi.createRoom(quizId);
-            setCreatedRoom(data.room);
+            const { data } = await quizApi.createRoom(quizId, durationMinutes);
+            setActiveRoom(data.room);
             return { success: true, room: data.room };
         } catch (err: any) {
             setError(err.response?.data?.error || 'Failed to create room');
@@ -41,6 +42,7 @@ export function useAdminQuiz() {
 
     const createQuiz = useCallback(async (quizData: any) => {
         setLoading(true);
+        setError(null);
         try {
             const { data } = await quizApi.createQuiz(quizData);
             return { success: true, quiz: data.quiz };
@@ -55,37 +57,86 @@ export function useAdminQuiz() {
     const getQuizzes = useCallback(async () => {
         try {
             const { data } = await quizApi.getQuizzes();
-            return data.quizzes;
+            return data.quizzes || [];
         } catch (err) {
             return [];
         }
     }, []);
 
-    const getRoomStatus = useCallback(async (roomId: string) => {
+    const getActiveRooms = useCallback(async () => {
         try {
-            const { data } = await quizApi.getRoomStatus(roomId);
+            const { data } = await quizApi.getActiveRooms();
+            return data.rooms || [];
+        } catch (err) {
+            return [];
+        }
+    }, []);
+
+    const getRecentRooms = useCallback(async () => {
+        try {
+            const { data } = await quizApi.getRecentRooms();
+            return data.rooms || [];
+        } catch (err) {
+            return [];
+        }
+    }, []);
+
+    const getRoomStatus = useCallback(async (roomCode: string) => {
+        try {
+            const { data } = await quizApi.getRoomStatus(roomCode);
             return data;
         } catch (err) {
             return null;
         }
     }, []);
 
+    // Enter an existing room (from "Ongoing Rooms" list)
+    const enterRoom = useCallback((room: any) => {
+        setActiveRoom(room);
+    }, []);
+
+    // Exit room view (go back to list, NOT logout)
+    const exitRoom = useCallback(() => {
+        setActiveRoom(null);
+    }, []);
+
+    // Cancel an active room (admin stops the quiz)
+    const cancelRoom = useCallback(async (code: string) => {
+        setLoading(true);
+        setError(null);
+        try {
+            await quizApi.cancelRoom(code);
+            setActiveRoom(null);
+            return { success: true };
+        } catch (err: any) {
+            setError(err.response?.data?.error || 'Failed to cancel room');
+            return { success: false };
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
     const logout = useCallback(() => {
-        sessionStorage.removeItem('quiz_admin_session');
+        sessionStorage.removeItem('quiz_admin_secret');
         setIsAuthenticated(false);
-        setCreatedRoom(null);
+        setActiveRoom(null);
     }, []);
 
     return {
         isAuthenticated,
         loading,
         error,
-        createdRoom,
+        activeRoom,
         verifyAdmin,
         createRoom,
         createQuiz,
         getQuizzes,
+        getActiveRooms,
+        getRecentRooms,
         getRoomStatus,
+        enterRoom,
+        exitRoom,
+        cancelRoom,
         logout
     };
 }

@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { quizApi } from '@/services/api';
 
 const STORAGE_KEY_PREFIX = 'quiz_participant_';
 
-export function useQuizRoom(roomId: string | null) {
+export function useQuizRoom(roomCode: string | null) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [questions, setQuestions] = useState<any[]>([]);
@@ -11,13 +11,15 @@ export function useQuizRoom(roomId: string | null) {
     const [participantId, setParticipantId] = useState<string | null>(null);
     const [participantName, setParticipantName] = useState<string | null>(null);
     const [isSubmitted, setIsSubmitted] = useState(false);
+    const [isCancelled, setIsCancelled] = useState(false);
     const [expiresAt, setExpiresAt] = useState<string | null>(null);
     const [roomInfo, setRoomInfo] = useState<any | null>(null);
+    const initializedRef = useRef(false);
 
     // Get stored participant data
     const getStoredData = useCallback(() => {
-        if (!roomId) return null;
-        const stored = localStorage.getItem(`${STORAGE_KEY_PREFIX}${roomId}`);
+        if (!roomCode) return null;
+        const stored = localStorage.getItem(`${STORAGE_KEY_PREFIX}${roomCode}`);
         if (stored) {
             try {
                 return JSON.parse(stored);
@@ -26,80 +28,66 @@ export function useQuizRoom(roomId: string | null) {
             }
         }
         return null;
-    }, [roomId]);
+    }, [roomCode]);
 
     // Store participant data
-    const storeData = useCallback((data: { participantId: string; name: string; answers: Record<string, number>; submitted: boolean }) => {
-        if (!roomId) return;
-        localStorage.setItem(`${STORAGE_KEY_PREFIX}${roomId}`, JSON.stringify(data));
-    }, [roomId]);
+    const storeData = useCallback((data: any) => {
+        if (!roomCode) return;
+        localStorage.setItem(`${STORAGE_KEY_PREFIX}${roomCode}`, JSON.stringify(data));
+    }, [roomCode]);
 
-    // Fetch room info
+    // Fetch public room info
     const fetchRoomInfo = useCallback(async () => {
-        if (!roomId) return;
+        if (!roomCode) return;
 
         setLoading(true);
         try {
-            const { data } = await quizApi.getRoomStatus(roomId); // Note: Student endpoint for status returns only validation info usually unless we use public status
-            // We might need a public endpoint for room info (isActive, valid code etc)
-            // `getRoomStatus` in `api.ts` pointed to `/room/:code/status` (Admin protected in backend!)
-            // Wait! `router.get('/:code/status', authenticateAdmin ...)` in `roomRoutes.js`.
-            // Students cannot call this!
-            // I need a student-facing "check room" endpoint in backend.
-            // `router.post('/join')` does validation.
-            // Maybe I should add `router.get('/:code')` public endpoint for basic info.
-            // For now, I'll rely on `join` to get info, or add the endpoint.
-            // Let's assume I'll add the endpoint or just handle it gracefully.
-            // Actually `useQuizRoom` calls `joinRoom` which returns info.
-            // But `fetchRoomInfo` is called on mount.
-            // If I am a student, I shouldn't be able to see room status unless I joined?
-            // Or I need to know if room exists.
-            // Let's stub it for now or rely on Join.
-            // If I used `getRoomStatus` (admin) it will 401.
-
-            // FIX in backend needed: Public generic room info.
-            // For now, I will skip `fetchRoomInfo` for students via API if it fails, or only trust `joinRoom`.
-
-            // Update: I will modify `useQuizRoom` to NOT call `getRoomStatus` if not admin? 
-            // But `useQuizRoom` is for students.
-            // I should add a public route in backend `GET /api/room/:code` (no auth) returning basic info (name, isExpired).
-            // I will do that in next turn.
-
-            // For now, let's keep the code structure but handle error.
-            // Or rely on `joinRoom` to populate.
-
-        } catch (err) {
-            // setError('Failed to connect to server'); 
-            // Don't show error immediately on mount if just checking
+            const { data } = await quizApi.getRoomInfo(roomCode);
+            setRoomInfo(data);
+            setExpiresAt(data.expiresAt);
+        } catch (err: any) {
+            if (err.response?.status === 404) {
+                setError('Room not found. Please check the code and try again.');
+            }
         } finally {
             setLoading(false);
         }
-    }, [roomId]);
+    }, [roomCode]);
 
     // Join room
     const joinRoom = useCallback(async (name: string) => {
-        if (!roomId) return { success: false, error: 'No room ID' };
+        if (!roomCode) return { success: false, error: 'No room code' };
 
         setLoading(true);
         setError(null);
 
         try {
-            const { data } = await quizApi.joinRoom(roomId, name);
+            const { data } = await quizApi.joinRoom(roomCode, name);
 
             setParticipantId(data.participantId);
             setParticipantName(name);
             setQuestions(data.questions);
-            // setExpiresAt(data.expiresAt); 
+            setExpiresAt(data.expiresAt);
+            setIsSubmitted(data.isSubmitted || false);
 
-            const newAnswers = {};
-            setAnswers(newAnswers);
-            setIsSubmitted(false);
+            // If re-joining, restore answers
+            const restoredAnswers: Record<string, number> = {};
+            if (data.answers) {
+                for (const [key, val] of Object.entries(data.answers)) {
+                    restoredAnswers[key] = typeof val === 'string' ? parseInt(val as string) : (val as number);
+                }
+            }
+            setAnswers(restoredAnswers);
+
+            if (data.roomName) {
+                setRoomInfo(prev => ({ ...prev, name: data.roomName }));
+            }
 
             storeData({
                 participantId: data.participantId,
                 name,
-                answers: newAnswers,
-                submitted: false,
+                answers: restoredAnswers,
+                submitted: data.isSubmitted || false,
             });
 
             return { success: true };
@@ -110,66 +98,110 @@ export function useQuizRoom(roomId: string | null) {
         } finally {
             setLoading(false);
         }
-    }, [roomId, storeData]);
+    }, [roomCode, storeData]);
 
     // Save answer
     const saveAnswer = useCallback(async (questionId: string, answer: number) => {
-        if (!participantId || !roomId) return;
+        if (!participantId || !roomCode) return;
 
         const newAnswers = { ...answers, [questionId]: answer };
         setAnswers(newAnswers);
 
-        const stored = getStoredData();
-        if (stored) {
-            storeData({ ...stored, answers: newAnswers });
-        }
+        storeData({
+            participantId,
+            name: participantName,
+            answers: newAnswers,
+            submitted: isSubmitted,
+        });
 
         try {
-            await quizApi.submitAnswer(roomId, participantId, { [questionId]: answer });
+            await quizApi.submitAnswer(roomCode, participantId, { [questionId]: answer });
         } catch (err) {
             console.error('Failed to sync answer:', err);
         }
-    }, [participantId, roomId, answers, getStoredData, storeData]);
+    }, [participantId, roomCode, answers, participantName, isSubmitted, storeData]);
 
     // Submit quiz
     const submitQuiz = useCallback(async () => {
-        if (!participantId || !roomId) return { success: false };
+        if (!participantId || !roomCode) return { success: false };
 
         try {
-            await quizApi.submitQuiz(roomId, participantId);
+            const { data } = await quizApi.submitQuiz(roomCode, participantId);
 
             setIsSubmitted(true);
-            const stored = getStoredData();
-            if (stored) {
-                storeData({ ...stored, submitted: true });
-            }
-            return { success: true };
+            storeData({
+                participantId,
+                name: participantName,
+                answers,
+                submitted: true,
+            });
+            return { success: true, score: data.score };
         } catch (err: any) {
-            return { success: false, error: err.response?.data?.error || 'Failed to submit' };
+            const msg = err.response?.data?.error || 'Failed to submit';
+            setError(msg);
+            return { success: false, error: msg };
         }
-    }, [participantId, roomId, getStoredData, storeData]);
+    }, [participantId, roomCode, participantName, answers, storeData]);
 
-    // Helper to re-hydrate from storage on load
+    // Re-hydrate from storage & re-join on mount
     useEffect(() => {
+        if (!roomCode || initializedRef.current) return;
+        initializedRef.current = true;
+
         const stored = getStoredData();
-        // If we have stored data, we can't fully "rejoin" without API support for re-hydration.
-        // But we can set local state.
-        if (stored && stored.participantId) {
-            setParticipantId(stored.participantId);
-            setParticipantName(stored.name);
-            setAnswers(stored.answers || {});
-            setIsSubmitted(stored.submitted || false);
-            // We miss 'questions' and 'expiresAt' if we don't fetch them.
-            // Since we can't fetch room info (publicly), we are stuck unless we re-join or add public endpoint.
-            // I'll assume I'll add the public endpoint.
-        }
-    }, [getStoredData]);
+        if (stored && stored.participantId && stored.name) {
+            // Attempt to re-join (backend handles dedup by name)
+            (async () => {
+                setLoading(true);
+                try {
+                    const { data } = await quizApi.joinRoom(roomCode, stored.name);
+                    setParticipantId(data.participantId);
+                    setParticipantName(stored.name);
+                    setQuestions(data.questions);
+                    setExpiresAt(data.expiresAt);
+                    setIsSubmitted(data.isSubmitted || false);
 
-    useEffect(() => {
-        if (roomId) {
+                    const restoredAnswers: Record<string, number> = {};
+                    if (data.answers) {
+                        for (const [key, val] of Object.entries(data.answers)) {
+                            restoredAnswers[key] = typeof val === 'string' ? parseInt(val as string) : (val as number);
+                        }
+                    }
+                    setAnswers(restoredAnswers);
+
+                    if (data.roomName) {
+                        setRoomInfo(prev => ({ ...prev, name: data.roomName }));
+                    }
+                } catch {
+                    // If re-join fails (expired, etc), clear stored data
+                    localStorage.removeItem(`${STORAGE_KEY_PREFIX}${roomCode}`);
+                } finally {
+                    setLoading(false);
+                }
+            })();
+        } else {
             fetchRoomInfo();
         }
-    }, [roomId, fetchRoomInfo]);
+    }, [roomCode, getStoredData, fetchRoomInfo]);
+
+    // Poll for cancellation while quiz is in progress
+    useEffect(() => {
+        if (!roomCode || !participantId || isSubmitted || isCancelled) return;
+
+        const checkCancellation = async () => {
+            try {
+                const { data } = await quizApi.getRoomInfo(roomCode);
+                if (data.isCancelled) {
+                    setIsCancelled(true);
+                }
+            } catch {
+                // Ignore polling errors
+            }
+        };
+
+        const interval = setInterval(checkCancellation, 5000);
+        return () => clearInterval(interval);
+    }, [roomCode, participantId, isSubmitted, isCancelled]);
 
     return {
         loading,
@@ -180,6 +212,7 @@ export function useQuizRoom(roomId: string | null) {
         participantId,
         participantName,
         isSubmitted,
+        isCancelled,
         expiresAt,
         joinRoom,
         saveAnswer,
@@ -188,35 +221,32 @@ export function useQuizRoom(roomId: string | null) {
     };
 }
 
-export function useLeaderboard(roomId: string | null) {
+export function useLeaderboard(roomCode: string | null) {
     const [loading, setLoading] = useState(false);
     const [leaderboard, setLeaderboard] = useState<any[]>([]);
     const [roomName, setRoomName] = useState<string>('');
     const [error, setError] = useState<string | null>(null);
 
     const fetchLeaderboard = useCallback(async () => {
-        if (!roomId) return;
+        if (!roomCode) return;
 
         setLoading(true);
-        // Leaderboard endpoint logic... 
-        // I didn't verify if I created a leaderboard endpoint in `roomRoutes.js`.
-        // I checked `roomRoutes.js` content (Step 98) -> NO LEADERBOARD ENDPOINT!
-        // I missed `get-leaderboard`.
-        // I need to add that too.
         try {
-            // Mocking or skipping until endpoint exists
-        } catch (err) {
-            setError('Failed to fetch leaderboard');
+            const { data } = await quizApi.getLeaderboard(roomCode);
+            setLeaderboard(data.leaderboard || []);
+            setRoomName(data.roomName || '');
+        } catch (err: any) {
+            setError(err.response?.data?.error || 'Leaderboard not available yet');
         } finally {
             setLoading(false);
         }
-    }, [roomId]);
+    }, [roomCode]);
 
     useEffect(() => {
-        if (roomId) {
+        if (roomCode) {
             fetchLeaderboard();
         }
-    }, [roomId, fetchLeaderboard]);
+    }, [roomCode, fetchLeaderboard]);
 
     return { loading, leaderboard, roomName, error, refetch: fetchLeaderboard };
 }
