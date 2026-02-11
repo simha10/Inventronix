@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Plus, Trash2, Save } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -57,7 +58,7 @@ export function QuizCreator({ onSubmit, loading }: QuizCreatorProps) {
     );
     
     if (validQuestions.length === 0) {
-      alert('Please add at least one complete question');
+      toast.error('Please add at least one complete question');
       return;
     }
     

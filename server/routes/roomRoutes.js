@@ -18,13 +18,14 @@ router.post('/create', authenticateAdmin, async (req, res) => {
         if (!quiz) return res.status(404).json({ error: 'Quiz not found' });
 
         const code = generateRoomCode();
-        const expiresAt = new Date(Date.now() + duration * 60 * 1000);
-
+        // Don't set expiresAt yet. Set status to waiting.
         const room = new Room({
             code,
             quizId,
             quizSnapshot: quiz.toObject(),
-            expiresAt,
+            duration,
+            status: 'waiting',
+            // expiresAt will be set when started
         });
 
         await room.save();
@@ -32,12 +33,37 @@ router.post('/create', authenticateAdmin, async (req, res) => {
             success: true,
             room: {
                 code: room.code,
-                expiresAt: room.expiresAt,
+                status: room.status,
+                duration: room.duration,
                 _id: room._id,
                 quizTitle: quiz.title,
                 participantCount: 0,
             }
         });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Start a room (Admin only)
+router.post('/:code/start', authenticateAdmin, async (req, res) => {
+    try {
+        const { code } = req.params;
+        const room = await Room.findOne({ code: code.toUpperCase() });
+        if (!room) return res.status(404).json({ error: 'Room not found' });
+
+        if (room.status !== 'waiting') {
+            return res.status(400).json({ error: `Room is ${room.status}, cannot start` });
+        }
+
+        const now = new Date();
+        room.status = 'active';
+        room.startedAt = now;
+        room.expiresAt = new Date(now.getTime() + room.duration * 60 * 1000);
+
+        await room.save();
+
+        res.json({ success: true, room });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
@@ -102,10 +128,17 @@ router.get('/:code/info', async (req, res) => {
         const room = await Room.findOne({ code: code.toUpperCase() });
         if (!room) return res.status(404).json({ error: 'Room not found' });
 
-        const isExpired = new Date() > room.expiresAt;
+        const isExpired = room.expiresAt ? new Date() > room.expiresAt : false;
         const isCancelled = !!room.cancelledAt;
-        const timeLeft = room.expiresAt.getTime() - Date.now();
-        const canJoin = !isExpired && !isCancelled && timeLeft > 5 * 60 * 1000;
+
+        // If waiting, can join. If active, check expiry.
+        let canJoin = !isCancelled;
+        if (room.status === 'active' && room.expiresAt) {
+            const timeLeft = room.expiresAt.getTime() - Date.now();
+            canJoin = !isExpired && timeLeft > 5 * 60 * 1000;
+        } else if (room.status === 'completed') {
+            canJoin = false;
+        }
 
         res.json({
             success: true,
@@ -113,10 +146,11 @@ router.get('/:code/info', async (req, res) => {
             questionCount: room.quizSnapshot.questions?.length || 0,
             participantCount: room.participants.length,
             expiresAt: room.expiresAt,
+            status: room.status, // Return status
             isExpired,
             isCancelled,
             canJoin,
-            isActive: room.isActive,
+            isActive: room.status === 'active', // For compatibility
         });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
@@ -130,8 +164,10 @@ router.post('/join', async (req, res) => {
         const room = await Room.findOne({ code: code.toUpperCase() });
 
         if (!room) return res.status(404).json({ error: 'Room not found' });
-        if (!room.isActive) return res.status(400).json({ error: 'Room is not active' });
-        if (new Date() > room.expiresAt) return res.status(400).json({ error: 'Room expired' });
+        if (room.cancelledAt) return res.status(400).json({ error: 'Room is cancelled' });
+        // Allow joining if waiting OR active (and not expired)
+        if (room.status === 'completed') return res.status(400).json({ error: 'Room is completed' });
+        if (room.status === 'active' && room.expiresAt && new Date() > room.expiresAt) return res.status(400).json({ error: 'Room expired' });
 
         // Check if name taken
         const existing = room.participants.find(p => p.name.toLowerCase() === name.toLowerCase());
@@ -310,6 +346,18 @@ router.get('/:code/leaderboard', async (req, res) => {
             leaderboard,
             roomName: room.quizSnapshot.title || 'Quiz Room',
         });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Delete a room (Admin only)
+router.delete('/:code', authenticateAdmin, async (req, res) => {
+    try {
+        const { code } = req.params;
+        const result = await Room.deleteOne({ code: code.toUpperCase() });
+        if (result.deletedCount === 0) return res.status(404).json({ error: 'Room not found' });
+        res.json({ success: true, message: 'Room deleted successfully' });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }

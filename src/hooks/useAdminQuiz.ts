@@ -116,6 +116,36 @@ export function useAdminQuiz() {
         }
     }, []);
 
+    const startRoom = useCallback(async (code: string) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const { data } = await quizApi.startRoom(code);
+            // Updating activeRoom if it matches
+            setActiveRoom((prev: any) => prev?.code === code ? data.room : prev);
+            return { success: true, room: data.room };
+        } catch (err: any) {
+            setError(err.response?.data?.error || 'Failed to start room');
+            return { success: false };
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    const deleteRoom = useCallback(async (code: string) => {
+        setLoading(true);
+        setError(null);
+        try {
+            await quizApi.deleteRoom(code);
+            return { success: true };
+        } catch (err: any) {
+            setError(err.response?.data?.error || 'Failed to delete room');
+            return { success: false };
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
     const logout = useCallback(() => {
         sessionStorage.removeItem('quiz_admin_secret');
         setIsAuthenticated(false);
@@ -137,6 +167,8 @@ export function useAdminQuiz() {
         enterRoom,
         exitRoom,
         cancelRoom,
+        startRoom,
+        deleteRoom,
         logout
     };
 }
