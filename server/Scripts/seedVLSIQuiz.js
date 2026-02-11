@@ -17,7 +17,7 @@ const vlsiQuiz = {
                 'It is much easier to fabricate on a silicon wafer.',
                 'It operates at much higher clock speeds.',
             ],
-            correctAnswer: 'It uses fewer transistors for the same logic function.',
+            correctAnswer: 'It has virtually zero static power dissipation.',
         },
         {
             id: 'q1',
@@ -34,7 +34,7 @@ const vlsiQuiz = {
                 'The number of transistors on a microchip doubles approximately every two years.',
                 'The cost of fabricating a wafer remains constant regardless of complexity.',
             ],
-            correctAnswer: 'The speed of processors doubles every year.',
+            correctAnswer: 'The number of transistors on a microchip doubles approximately every two years.',
         },
         {
             id: 'q3',
@@ -51,7 +51,7 @@ const vlsiQuiz = {
                 'To act as the source and drain terminals.',
                 'To reduce the physical size of the transistor.',
             ],
-            correctAnswer: 'To increase the switching speed of the device.',
+            correctAnswer: 'To provide insulation between the gate and the channel.',
         },
         {
             id: 'q5',
@@ -62,7 +62,7 @@ const vlsiQuiz = {
                 'The assembly code used to program the hardware.',
                 'The timing analysis report of the circuit.',
             ],
-            correctAnswer: 'The architectural block diagram of the CPU.',
+            correctAnswer: 'The physical representation of the layers (diffusion, polysilicon, metal) on the chip.',
         },
         {
             id: 'q6',
@@ -79,19 +79,19 @@ const vlsiQuiz = {
                 'The physical container used to ship the silicon wafers.',
                 'A battery cell used to power low-voltage mobile processors.',
             ],
-            correctAnswer: 'A customized transistor designed for a specific chip.',
+            correctAnswer: 'A pre-designed logic gate with fixed height and functionality used in automated layout.',
         },
         {
             id: 'q8',
             question: 'The process of adding impurities to a pure semiconductor to change its electrical properties is called:',
             options: ['Etching', 'Diffusion', 'Doping', 'Lithography'],
-            correctAnswer: 'Etching',
+            correctAnswer: 'Doping',
         },
         {
             id: 'q9',
             question: 'Which type of power dissipation in CMOS is caused by the charging and discharging of load capacitances?',
             options: ['Static Power', 'Short-circuit Power', 'Dynamic Power', 'Leakage Power'],
-            correctAnswer: 'Static Power',
+            correctAnswer: 'Dynamic Power',
         },
     ],
 };
