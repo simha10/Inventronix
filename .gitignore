@@ -26,5 +26,7 @@ dist-ssr
 # Environment Variables
 .env
 server/.env
+server/.env.example
 .env.local
 .env.*.local
+.env.example
