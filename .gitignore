@@ -30,3 +30,6 @@ server/.env.example
 .env.local
 .env.*.local
 .env.example
+.antigravity
+.antigravity/mcp.json
+

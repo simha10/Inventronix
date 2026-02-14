@@ -1,30 +1,30 @@
 import mongoose from 'mongoose';
 
-const participantSchema = new mongoose.Schema({
-    id: { type: String, required: true },
-    name: { type: String, required: true },
-    answers: { type: Map, of: String, default: {} }, // questionId -> answer
-    score: { type: Number, default: 0 },
-    submittedAt: Date,
-    startedAt: { type: Date, default: Date.now },
-    timeTaken: Number,
-});
-
 const roomSchema = new mongoose.Schema({
     code: { type: String, required: true, unique: true },
     quizId: { type: mongoose.Schema.Types.ObjectId, ref: 'Quiz', required: true },
     quizSnapshot: { type: Object, required: true }, // Store copy of quiz at time of room creation
     status: {
         type: String,
-        enum: ['waiting', 'active', 'completed'],
-        default: 'waiting'
+        enum: ['CREATED', 'ACTIVE', 'LOCKED', 'RESULTS_READY', 'ARCHIVED'],
+        default: 'CREATED'
     },
     duration: { type: Number, required: true }, // Duration in minutes
+
+    // Lifecycle timestamps
+    createdAt: { type: Date, default: Date.now },
     startedAt: { type: Date },
-    expiresAt: { type: Date }, // Will be set when status becomes active
+    expiresAt: { type: Date, index: true }, // For finding expired active rooms
     cancelledAt: { type: Date },
-    participants: [participantSchema],
-    createdAt: { type: Date, default: Date.now } // TTL index could be added here
+
+    // Concurrency & State
+    participantCount: { type: Number, default: 0 },
+    maxParticipants: { type: Number, default: 100 },
+    submittedCount: { type: Number, default: 0 },
+    leaderboardSnapshot: { type: Array, default: [] } // Cached results
 });
+
+// Index for finding active rooms efficiently
+roomSchema.index({ status: 1 });
 
 export const Room = mongoose.model('Room', roomSchema);

@@ -39,4 +39,20 @@ router.get('/', authenticateAdmin, async (req, res) => {
     }
 });
 
+// Delete a quiz
+router.delete('/:id', authenticateAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const quiz = await Quiz.findByIdAndDelete(id);
+
+        if (!quiz) {
+            return res.status(404).json({ success: false, error: 'Quiz not found' });
+        }
+
+        res.json({ success: true, message: 'Quiz deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 export default router;

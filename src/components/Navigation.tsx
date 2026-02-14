@@ -35,11 +35,11 @@ const Navigation = () => {
     <motion.nav
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      className={`fixed top-0 left-0 right-0 w-screen z-50 transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 w-full z-50 transition-all duration-300 ${
         scrolled ? "glass shadow-3d" : "bg-transparent"
       }`}
     >
-      <div className="flex items-center justify-between h-16 max-w-7xl mx-auto px-0 sm:px-4 lg:px-8">
+      <div className="flex items-center justify-between h-16 max-w-full mx-20 px-0 sm:px-4 lg:px-8">
         {/* Logo */}
         <Link to="/" className="flex items-center space-x-2 group flex-shrink-0">
           <div className="relative flex-shrink-0">

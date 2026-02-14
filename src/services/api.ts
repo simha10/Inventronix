@@ -23,6 +23,7 @@ export const quizApi = {
     verifyAdmin: (secret: string) => api.post('/admin/verify', {}, { headers: { 'x-admin-secret': secret } }),
     createQuiz: (data: any) => api.post('/quiz/create', data),
     getQuizzes: () => api.get('/quiz'),
+    deleteQuiz: (id: string) => api.delete(`/quiz/${id}`),
     createRoom: (quizId: string, durationMinutes?: number) =>
         api.post('/room/create', { quizId, durationMinutes }),
     getActiveRooms: () => api.get('/room/active'),

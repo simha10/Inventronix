@@ -61,6 +61,7 @@ export function AdminPanel() {
     cancelRoom,
     startRoom,
     deleteRoom,
+    deleteQuiz,
     logout,
   } = useAdminQuiz();
 
@@ -581,7 +582,7 @@ export function AdminPanel() {
 
   // ─── MAIN DASHBOARD ──────────────────────
   return (
-    <div className="max-w-5xl mx-auto p-4 md:p-6">
+    <div className="max-w-full mx-20 p-4 md:p-6">
       <AnimatePresence>{durationModal}</AnimatePresence>
 
       {/* Header */}
@@ -655,9 +656,20 @@ export function AdminPanel() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction 
-              onClick={() => {
+              onClick={async () => {
                 if (resultToDelete) {
-                  deleteRoom(resultToDelete).then(() => fetchRecentRooms());
+                  // Check if it's a quiz ID (simple length check or context)
+                  // But here we might overlap if we reuse resultToDelete for both.
+                  // Let's check if the ID exists in quizzes list
+                  const isQuiz = quizzes.find(q => q._id === resultToDelete);
+                  
+                  if (isQuiz) {
+                      await deleteQuiz(resultToDelete);
+                      fetchQuizzes();
+                  } else {
+                      await deleteRoom(resultToDelete);
+                      fetchRecentRooms();
+                  }
                   setResultToDelete(null);
                 }
               }} 
@@ -693,7 +705,7 @@ export function AdminPanel() {
                 >
                   <motion.div
                     variants={cardHover}
-                    className="border p-5 rounded-xl bg-card cursor-pointer group relative overflow-hidden"
+                    className="border p-5 rounded-xl bg-card cursor-pointer group relative overflow-hidden w-full"
                   >
                     <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-violet-500/5 to-transparent rounded-bl-full" />
                     <div className="relative">
@@ -702,13 +714,26 @@ export function AdminPanel() {
                         <BookOpen className="w-3.5 h-3.5" />
                         {quiz.questions.length} Questions
                       </p>
-                      <Button
-                        className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white transition-all duration-200"
-                        onClick={() => handleStartRoom(quiz._id)}
-                      >
-                        <Zap className="w-4 h-4 mr-2" />
-                        Start Live Room
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          className="flex-1 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white transition-all duration-200"
+                          onClick={() => handleStartRoom(quiz._id)}
+                        >
+                          <Zap className="w-4 h-4 mr-2" />
+                          Start Live
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setResultToDelete(quiz._id);
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   </motion.div>
                 </motion.div>

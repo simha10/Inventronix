@@ -1,6 +1,8 @@
 import express from 'express';
 import { Room } from '../models/Room.js';
 import { Quiz } from '../models/Quiz.js';
+import { Participant } from '../models/Participant.js';
+import { Submission } from '../models/Submission.js';
 import { authenticateAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -8,40 +10,49 @@ const router = express.Router();
 // Helper to generate room code
 const generateRoomCode = () => Math.random().toString(36).substring(2, 8).toUpperCase();
 
-// Create a room from a quiz (Admin only)
+// Helper to check room expiry
+const checkRoomState = async (room) => {
+    if (room.status === 'ACTIVE' && room.expiresAt && new Date() > room.expiresAt) {
+        room.status = 'LOCKED';
+        await room.save();
+        return false; // No longer active
+    }
+    return room.status === 'ACTIVE';
+};
+
+// Create a room (Admin only)
 router.post('/create', authenticateAdmin, async (req, res) => {
     try {
         const { quizId, durationMinutes } = req.body;
-        const duration = Math.max(5, Math.min(durationMinutes || 60, 480)); // 5 min to 8 hours, default 60
+        const duration = Math.max(5, Math.min(durationMinutes || 60, 480));
 
         const quiz = await Quiz.findById(quizId);
         if (!quiz) return res.status(404).json({ error: 'Quiz not found' });
 
         const code = generateRoomCode();
-        // Don't set expiresAt yet. Set status to waiting.
         const room = new Room({
             code,
             quizId,
             quizSnapshot: quiz.toObject(),
             duration,
-            status: 'waiting',
-            // expiresAt will be set when started
+            maxParticipants: Math.min(req.body.maxParticipants || 100, 500),
+            status: 'CREATED'
         });
 
         await room.save();
         res.json({
             success: true,
             room: {
+                _id: room._id,
                 code: room.code,
                 status: room.status,
                 duration: room.duration,
-                _id: room._id,
                 quizTitle: quiz.title,
-                participantCount: 0,
+                participantCount: 0
             }
         });
     } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
+        res.status(500).json({ success: false, error: 'Failed to create room: ' + error.message });
     }
 });
 
@@ -52,15 +63,329 @@ router.post('/:code/start', authenticateAdmin, async (req, res) => {
         const room = await Room.findOne({ code: code.toUpperCase() });
         if (!room) return res.status(404).json({ error: 'Room not found' });
 
-        if (room.status !== 'waiting') {
+        if (room.status !== 'CREATED') {
             return res.status(400).json({ error: `Room is ${room.status}, cannot start` });
         }
 
         const now = new Date();
-        room.status = 'active';
+        room.status = 'ACTIVE';
         room.startedAt = now;
         room.expiresAt = new Date(now.getTime() + room.duration * 60 * 1000);
 
+        await room.save();
+        res.json({ success: true, room });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Join a room (Student) - ATOMIC WITH LIMITS
+router.post('/join', async (req, res) => {
+    try {
+        const { code, name } = req.body;
+
+        // 1. ATOMIC CHECK & RESERVE
+        // We attempt to increment participantCount ONLY IF it is less than maxParticipants
+        // This prevents race conditions where 101 people join a 100-person room simultaneously.
+        const room = await Room.findOneAndUpdate(
+            {
+                code: code.toUpperCase(),
+                status: { $in: ['CREATED', 'ACTIVE'] },
+                $expr: { $lt: ["$participantCount", "$maxParticipants"] } // Atomic condition
+            },
+            { $inc: { participantCount: 1 } },
+            { new: true }
+        );
+
+        if (!room) {
+            // Check why we failed (Room doesn't exist? Wrong status? Full?)
+            const check = await Room.findOne({ code: code.toUpperCase() });
+            if (!check) return res.status(404).json({ error: 'Room not found' });
+            if (check.status === 'LOCKED' || check.status === 'ARCHIVED') return res.status(400).json({ error: 'Room is closed' });
+
+            // If we are here, it means the room is full (participantCount >= maxParticipants)
+            return res.status(400).json({ error: 'Room is full' });
+        }
+
+        // Lazy expiration check (if active)
+        if (room.status === 'ACTIVE' && room.expiresAt && new Date() > room.expiresAt) {
+            // Rollback reservation since we are rejecting
+            await Room.updateOne({ _id: room._id }, { $inc: { participantCount: -1 } });
+
+            room.status = 'LOCKED';
+            await room.save();
+            return res.status(400).json({ error: 'Room is closed' });
+        }
+
+        // 2. Try to create participant
+        try {
+            const participant = new Participant({
+                roomId: room._id,
+                name,
+                joinedAt: new Date()
+            });
+            await participant.save();
+
+            // Prepare response
+            const questions = room.quizSnapshot.questions.map(q => ({
+                id: q.id || q._id?.toString(),
+                question: q.question,
+                options: q.options
+            }));
+
+            res.json({
+                success: true,
+                participantId: participant._id,
+                questions,
+                expiresAt: room.expiresAt,
+                roomName: room.quizSnapshot.title || 'Quiz Room',
+                answers: {},
+                isSubmitted: false
+            });
+
+        } catch (err) {
+            // DUPLICATE NAME -> RE-JOIN or ERROR
+            // If duplicate, we must ROLLBACK the reservation increment we just did
+            // UNLESS it's a rejoin of an existing user (which doesn't consume a *new* spot, but we already incremented)
+
+            // Wait! If it's a rejoin, we effectively "consumed" a spot that was ALREADY accounted for in the count?
+            // Actually, if they are re-joining, they are already in the DB.
+            // But we just incremented count thinking it was a new person.
+            // So for REJOIN, we strictly MUST decrement the count we just added, because they were already counted previously.
+
+            await Room.updateOne({ _id: room._id }, { $inc: { participantCount: -1 } });
+
+            if (err.code === 11000) {
+                const existing = await Participant.findOne({ roomId: room._id, name });
+
+                // If the user actually exists, return their data (Rejoin)
+                if (existing) {
+                    let existingAnswers = {};
+                    if (existing.status === 'SUBMITTED') {
+                        const sub = await Submission.findOne({ participantId: existing._id });
+                        if (sub && sub.answers) existingAnswers = Object.fromEntries(sub.answers);
+                    }
+
+                    const questions = room.quizSnapshot.questions.map(q => ({
+                        id: q.id || q._id?.toString(),
+                        question: q.question,
+                        options: q.options
+                    }));
+
+                    return res.json({
+                        success: true,
+                        participantId: existing._id,
+                        questions,
+                        expiresAt: room.expiresAt,
+                        roomName: room.quizSnapshot.title || 'Quiz Room',
+                        answers: existingAnswers,
+                        isSubmitted: existing.status === 'SUBMITTED',
+                        rejoin: true
+                    });
+                }
+            }
+            throw err; // Re-throw other errors
+        }
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Submit Answer - ATOMIC
+router.post('/:code/submit', async (req, res) => {
+    try {
+        const { code } = req.params;
+        const { participantId, answers, submit } = req.body;
+
+        if (!submit) {
+            // Intermediate sync is not stored in DB to save writes 
+            // (Or could use Redis, but for now we only process final submit per strict requirements)
+            // If we really want "sync" without submit, we'd need a simpler update.
+            // For this high-concurrency refactor, we focus on FINAL submission.
+            return res.json({ success: true, message: "Intermediate sync ignored in high-load mode" });
+        }
+
+        const room = await Room.findOne({ code: code.toUpperCase() });
+        if (!room) return res.status(404).json({ error: 'Room not found' });
+
+        // Lazy expiration check
+        if (room.status === 'ACTIVE' && room.expiresAt && new Date() > room.expiresAt) {
+            room.status = 'LOCKED';
+            await room.save();
+        }
+
+        if (room.cancelledAt || room.status === 'LOCKED' || room.status === 'ARCHIVED') {
+            return res.status(400).json({ error: 'Room is closed' });
+        }
+
+        // Calculate score in memory
+        let score = 0;
+        const quizQuestions = room.quizSnapshot.questions;
+        quizQuestions.forEach(q => {
+            const qId = q.id || q._id?.toString();
+            const participantAnswer = answers[qId];
+            if (participantAnswer !== undefined) {
+                const answerIndex = parseInt(participantAnswer, 10);
+                const selectedOption = !isNaN(answerIndex) && q.options?.[answerIndex];
+                if (selectedOption && String(selectedOption) === String(q.correctAnswer)) {
+                    score++;
+                }
+            }
+        });
+
+        const now = new Date();
+        const submittedAt = now;
+
+        // Atomic Check-and-Set: Update only if status is JOINED (not SUBMITTED)
+        // We also need joinedAt to calculate timeTaken, so we might need a read first?
+        // Optimistic: Just do update and if match count 0, it means either bad ID or already submitted.
+
+        // We need 'startedAt' to calc timeTaken. 
+        const pCheck = await Participant.findById(participantId);
+        if (!pCheck) return res.status(404).json({ error: 'Participant not found' });
+
+        const timeTaken = now.getTime() - new Date(pCheck.startedAt || pCheck.joinedAt).getTime(); // fallback to joinedAt
+
+        const updatedParticipant = await Participant.findOneAndUpdate(
+            { _id: participantId, status: 'JOINED' },
+            {
+                $set: {
+                    status: 'SUBMITTED',
+                    submittedAt,
+                    score,
+                    timeTaken
+                }
+            },
+            { new: true }
+        );
+
+        if (!updatedParticipant) {
+            return res.status(400).json({ error: 'Already submitted' });
+        }
+
+        // Async: Store detailed answers in Submission collection
+        // We do this AFTER verifying participant update succeeded (first-writer wins)
+        // Fire-and-forget submission count increment
+        Room.updateOne({ _id: room._id }, { $inc: { submittedCount: 1 } }).exec();
+
+        await Submission.create({
+            participantId,
+            roomId: room._id,
+            answers,
+            submittedAt
+        });
+
+        res.json({ success: true, score });
+
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Get Leaderboard - Returns snapshot if available or error
+router.get('/:code/leaderboard', async (req, res) => {
+    try {
+        const { code } = req.params;
+        const room = await Room.findOne({ code: code.toUpperCase() });
+        if (!room) return res.status(404).json({ error: 'Room not found' });
+
+        // Admin override to calculate on fly? 
+        // For reliability, we stick to the plan: visible only in RESULTS_READY for public
+        // But for admin dashboard we might want it live.
+        // Assuming public access here.
+
+        if (room.status === 'RESULTS_READY' || room.status === 'ARCHIVED') {
+            return res.json({
+                success: true,
+                leaderboard: room.leaderboardSnapshot,
+                roomName: room.quizSnapshot.title,
+                status: room.status
+            });
+        }
+
+        // Explicitly check expiry and Transition
+        if (room.status === 'ACTIVE' && room.expiresAt && new Date() > room.expiresAt) {
+            room.status = 'LOCKED';
+            await room.save();
+            // Lock triggered, but leaderboard not ready yet (requires compute).
+            // Admin should trigger compute or we compute here?
+            // To be robust: If locked, we can trigger compute if not present.
+        }
+
+        if (room.status === 'LOCKED') {
+            // Computation Strategy:
+            // Aggregate Top 50 participants
+            const leaders = await Participant.find({ roomId: room._id, status: 'SUBMITTED' })
+                .sort({ score: -1, timeTaken: 1 })
+                .limit(50)
+                .lean();
+
+            const leaderboard = leaders.map((p, i) => ({
+                rank: i + 1,
+                name: p.name,
+                score: p.score,
+                timeTaken: p.timeTaken,
+                submitted: true
+            }));
+
+            // Save snapshot and transition
+            room.leaderboardSnapshot = leaderboard;
+            room.status = 'RESULTS_READY';
+            await room.save();
+
+            return res.json({
+                success: true,
+                leaderboard,
+                roomName: room.quizSnapshot.title,
+                status: 'RESULTS_READY'
+            });
+        }
+
+        return res.status(400).json({ error: 'Leaderboard not available yet' });
+
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Public: Get Info
+router.get('/:code/info', async (req, res) => {
+    try {
+        const { code } = req.params;
+        const room = await Room.findOne({ code: code.toUpperCase() })
+            .select('status expiresAt participantCount maxParticipants submittedCount quizSnapshot.title quizSnapshot.questions.length cancelledAt');
+
+        if (!room) return res.status(404).json({ error: 'Room not found' });
+
+        const isExpired = room.expiresAt ? new Date() > room.expiresAt : false;
+
+        res.json({
+            success: true,
+            name: room.quizSnapshot?.title,
+            questionCount: room.quizSnapshot?.questions?.length || 0,
+            participantCount: room.participantCount,
+            maxParticipants: room.maxParticipants || 100,
+            submittedCount: room.submittedCount,
+            expiresAt: room.expiresAt,
+            status: room.status, // CREATED, ACTIVE, LOCKED, RESULTS_READY
+            isExpired,
+            isCancelled: !!room.cancelledAt,
+            canJoin: room.status === 'CREATED' || (room.status === 'ACTIVE' && !isExpired)
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Admin: Close/Finish Room (Manual Trigger)
+router.post('/:code/close', authenticateAdmin, async (req, res) => {
+    try {
+        const { code } = req.params;
+        const room = await Room.findOne({ code: code.toUpperCase() });
+        if (!room) return res.status(404).json({ error: 'Room not found' });
+
+        room.status = 'LOCKED'; // Will trigger leaderboard computation on next fetch
+        room.expiresAt = new Date(); // Expire immediately
         await room.save();
 
         res.json({ success: true, room });
@@ -69,21 +394,20 @@ router.post('/:code/start', authenticateAdmin, async (req, res) => {
     }
 });
 
-// Get all active rooms (Admin only) — for "Ongoing Rooms" section
+// Admin: Get Active
 router.get('/active', authenticateAdmin, async (req, res) => {
     try {
         const rooms = await Room.find({
-            isActive: true,
-            cancelledAt: { $exists: false },
-            expiresAt: { $gt: new Date() },
+            status: 'ACTIVE',
+            expiresAt: { $gt: new Date() }
         }).sort({ createdAt: -1 });
 
         const activeRooms = rooms.map(r => ({
             _id: r._id,
             code: r.code,
             quizTitle: r.quizSnapshot?.title || 'Quiz Room',
-            participantCount: r.participants.length,
-            submittedCount: r.participants.filter(p => p.submittedAt).length,
+            participantCount: r.participantCount,
+            submittedCount: r.submittedCount,
             expiresAt: r.expiresAt,
             createdAt: r.createdAt,
         }));
@@ -94,23 +418,20 @@ router.get('/active', authenticateAdmin, async (req, res) => {
     }
 });
 
-// Get recently completed rooms (Admin only) — for "Recent Quizzes" section
+// Admin: Get Recent
 router.get('/recent', authenticateAdmin, async (req, res) => {
     try {
         const rooms = await Room.find({
-            expiresAt: { $lte: new Date() },
+            $or: [{ status: 'RESULTS_READY' }, { status: 'LOCKED' }, { status: 'ARCHIVED' }]
         }).sort({ expiresAt: -1 }).limit(20);
 
         const recentRooms = rooms.map(r => ({
             _id: r._id,
             code: r.code,
             quizTitle: r.quizSnapshot?.title || 'Quiz Room',
-            participantCount: r.participants.length,
-            submittedCount: r.participants.filter(p => p.submittedAt).length,
+            participantCount: r.participantCount,
+            submittedCount: r.submittedCount,
             totalQuestions: r.quizSnapshot?.questions?.length || 0,
-            topScore: r.participants.length > 0
-                ? Math.max(...r.participants.map(p => p.score || 0))
-                : 0,
             expiresAt: r.expiresAt,
             createdAt: r.createdAt,
         }));
@@ -121,256 +442,20 @@ router.get('/recent', authenticateAdmin, async (req, res) => {
     }
 });
 
-// Public: Get basic room info (for students before joining)
-router.get('/:code/info', async (req, res) => {
-    try {
-        const { code } = req.params;
-        const room = await Room.findOne({ code: code.toUpperCase() });
-        if (!room) return res.status(404).json({ error: 'Room not found' });
-
-        const isExpired = room.expiresAt ? new Date() > room.expiresAt : false;
-        const isCancelled = !!room.cancelledAt;
-
-        // If waiting, can join. If active, check expiry.
-        let canJoin = !isCancelled;
-        if (room.status === 'active' && room.expiresAt) {
-            const timeLeft = room.expiresAt.getTime() - Date.now();
-            canJoin = !isExpired && timeLeft > 5 * 60 * 1000;
-        } else if (room.status === 'completed') {
-            canJoin = false;
-        }
-
-        res.json({
-            success: true,
-            name: room.quizSnapshot.title || 'Quiz Room',
-            questionCount: room.quizSnapshot.questions?.length || 0,
-            participantCount: room.participants.length,
-            expiresAt: room.expiresAt,
-            status: room.status, // Return status
-            isExpired,
-            isCancelled,
-            canJoin,
-            isActive: room.status === 'active', // For compatibility
-        });
-    } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-
-// Join a room (Student)
-router.post('/join', async (req, res) => {
-    try {
-        const { code, name } = req.body;
-        const room = await Room.findOne({ code: code.toUpperCase() });
-
-        if (!room) return res.status(404).json({ error: 'Room not found' });
-        if (room.cancelledAt) return res.status(400).json({ error: 'Room is cancelled' });
-        // Allow joining if waiting OR active (and not expired)
-        if (room.status === 'completed') return res.status(400).json({ error: 'Room is completed' });
-        if (room.status === 'active' && room.expiresAt && new Date() > room.expiresAt) return res.status(400).json({ error: 'Room expired' });
-
-        // Check if name taken
-        const existing = room.participants.find(p => p.name.toLowerCase() === name.toLowerCase());
-        if (existing) {
-            // Allow re-join with same name (return existing data)
-            const questions = room.quizSnapshot.questions.map(q => ({
-                id: q.id || q._id?.toString(),
-                question: q.question,
-                options: q.options
-            }));
-
-            // Convert Map to plain object
-            const answersObj = {};
-            if (existing.answers) {
-                existing.answers.forEach((val, key) => {
-                    answersObj[key] = val;
-                });
-            }
-
-            return res.json({
-                success: true,
-                participantId: existing.id,
-                questions,
-                expiresAt: room.expiresAt,
-                roomName: room.quizSnapshot.title || 'Quiz Room',
-                answers: answersObj,
-                isSubmitted: !!existing.submittedAt,
-                rejoin: true,
-            });
-        }
-
-        const participant = {
-            id: Math.random().toString(36).substr(2, 9),
-            name,
-            startedAt: new Date()
-        };
-
-        room.participants.push(participant);
-        await room.save();
-
-        const questions = room.quizSnapshot.questions.map(q => ({
-            id: q.id || q._id?.toString(),
-            question: q.question,
-            options: q.options
-        }));
-
-        res.json({
-            success: true,
-            participantId: participant.id,
-            questions,
-            expiresAt: room.expiresAt,
-            roomName: room.quizSnapshot.title || 'Quiz Room',
-            answers: {},
-            isSubmitted: false,
-        });
-    } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-
-// Submit Answer / Sync
-router.post('/:code/submit', async (req, res) => {
-    try {
-        const { code } = req.params;
-        const { participantId, answers, submit } = req.body;
-
-        const room = await Room.findOne({ code: code.toUpperCase() });
-        if (!room) return res.status(404).json({ error: 'Room not found' });
-        if (room.cancelledAt) return res.status(400).json({ error: 'This room has been cancelled by the admin' });
-
-        const participant = room.participants.find(p => p.id === participantId);
-        if (!participant) return res.status(404).json({ error: 'Participant not found' });
-
-        if (participant.submittedAt) {
-            return res.status(400).json({ error: 'Already submitted' });
-        }
-
-        if (answers) {
-            for (const [qId, ans] of Object.entries(answers)) {
-                participant.answers.set(qId, String(ans));
-            }
-        }
-
-        if (submit) {
-            participant.submittedAt = new Date();
-            participant.timeTaken = Date.now() - new Date(participant.startedAt).getTime();
-
-            // Calculate score — participant answers are stored as option indices (e.g. "0", "1"),
-            // so we need to look up the actual option text at that index and compare to correctAnswer
-            let score = 0;
-            const quizQuestions = room.quizSnapshot.questions;
-            quizQuestions.forEach(q => {
-                const qId = q.id || q._id?.toString();
-                const participantAnswer = participant.answers.get(qId);
-                if (participantAnswer !== undefined) {
-                    const answerIndex = parseInt(participantAnswer, 10);
-                    const selectedOption = !isNaN(answerIndex) && q.options?.[answerIndex];
-                    // Compare the option text at the selected index with the correct answer
-                    if (selectedOption && String(selectedOption) === String(q.correctAnswer)) {
-                        score++;
-                    }
-                }
-            });
-            participant.score = score;
-        }
-
-        await room.save();
-        res.json({ success: true, score: participant.score });
-    } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-
-// Cancel a room (Admin only)
-router.post('/:code/cancel', authenticateAdmin, async (req, res) => {
-    try {
-        const { code } = req.params;
-        const room = await Room.findOne({ code: code.toUpperCase() });
-        if (!room) return res.status(404).json({ error: 'Room not found' });
-        if (room.cancelledAt) return res.status(400).json({ error: 'Room already cancelled' });
-
-        room.cancelledAt = new Date();
-        room.isActive = false;
-        await room.save();
-
-        res.json({ success: true, message: 'Room cancelled successfully' });
-    } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-
-// Get Leaderboard (Public — available after room expires or all submitted)
-router.get('/:code/leaderboard', async (req, res) => {
-    try {
-        const { code } = req.params;
-        const room = await Room.findOne({ code: code.toUpperCase() });
-        if (!room) return res.status(404).json({ error: 'Room not found' });
-
-        const isExpired = new Date() > room.expiresAt;
-        const allSubmitted = room.participants.length > 0 && room.participants.every(p => p.submittedAt);
-
-        if (!isExpired && !allSubmitted) {
-            return res.status(400).json({ error: 'Leaderboard not available yet. Wait for the timer to end.' });
-        }
-
-        const totalQuestions = room.quizSnapshot.questions?.length || 0;
-
-        // Include ALL participants — submitted ones ranked by score/time, 
-        // unsubmitted ones at the bottom with score 0
-        const leaderboard = room.participants
-            .map(p => ({
-                name: p.name,
-                score: p.submittedAt ? p.score : 0,
-                timeTaken: p.timeTaken || 0,
-                submitted: !!p.submittedAt,
-            }))
-            .sort((a, b) => {
-                // Submitted participants first
-                if (a.submitted !== b.submitted) return a.submitted ? -1 : 1;
-                // Then by score desc
-                if (b.score !== a.score) return b.score - a.score;
-                // Then by time asc
-                return (a.timeTaken || Infinity) - (b.timeTaken || Infinity);
-            })
-            .map((p, index) => ({
-                rank: index + 1,
-                name: p.name,
-                score: p.score,
-                timeTaken: p.timeTaken,
-                totalQuestions,
-                submitted: p.submitted,
-            }));
-
-        res.json({
-            success: true,
-            leaderboard,
-            roomName: room.quizSnapshot.title || 'Quiz Room',
-        });
-    } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-
-// Delete a room (Admin only)
+// Delete a room (Admin only) - Cascading Delete
 router.delete('/:code', authenticateAdmin, async (req, res) => {
     try {
         const { code } = req.params;
-        const result = await Room.deleteOne({ code: code.toUpperCase() });
-        if (result.deletedCount === 0) return res.status(404).json({ error: 'Room not found' });
-        res.json({ success: true, message: 'Room deleted successfully' });
-    } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-
-// Get Room Status (Admin) - live dashboard
-router.get('/:code/status', authenticateAdmin, async (req, res) => {
-    try {
-        const { code } = req.params;
         const room = await Room.findOne({ code: code.toUpperCase() });
+
         if (!room) return res.status(404).json({ error: 'Room not found' });
 
-        res.json({ success: true, room });
+        // Cascading delete
+        await Participant.deleteMany({ roomId: room._id });
+        await Submission.deleteMany({ roomId: room._id });
+        await Room.deleteOne({ _id: room._id });
+
+        res.json({ success: true, message: 'Room and all associated data deleted successfully' });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }

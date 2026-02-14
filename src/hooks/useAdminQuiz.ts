@@ -146,6 +146,20 @@ export function useAdminQuiz() {
         }
     }, []);
 
+    const deleteQuiz = useCallback(async (id: string) => {
+        setLoading(true);
+        setError(null);
+        try {
+            await quizApi.deleteQuiz(id);
+            return { success: true };
+        } catch (err: any) {
+            setError(err.response?.data?.error || 'Failed to delete quiz');
+            return { success: false };
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
     const logout = useCallback(() => {
         sessionStorage.removeItem('quiz_admin_secret');
         setIsAuthenticated(false);
@@ -169,6 +183,7 @@ export function useAdminQuiz() {
         cancelRoom,
         startRoom,
         deleteRoom,
+        deleteQuiz,
         logout
     };
 }
